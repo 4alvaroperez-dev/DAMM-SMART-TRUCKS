@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DAMM DDI — Modelo Matemático VRP + Carga</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --red:#C8102E;--red-light:#F5E0E4;
+  --gold:#E8B84B;--gold-light:#FBF0D3;
+  --ink:#12100F;--ink2:#2E2A29;
+  --smoke:#F5F3EF;--smoke2:#EAE7E0;
+  --mist:#D6D2C9;--white:#FFFFFF;
+  --green:#1A7A5A;--green-light:#DFF2EA;
+  --blue:#1A4A8C;--blue-light:#E0EAF7;
+  --font-head:'Syne',sans-serif;
+  --font-body:'DM Sans',sans-serif;
+  --font-mono:'DM Mono',monospace;
+}
+html,body{background:var(--smoke);color:var(--ink);font-family:var(--font-body);font-size:14px;line-height:1.6}
+.shell{max-width:960px;margin:0 auto;padding:40px 24px 80px}
+
+.page-hdr{border-bottom:1.5px solid var(--mist);padding-bottom:24px;margin-bottom:36px}
+.badge-row{display:flex;gap:8px;margin-bottom:12px;align-items:center}
+.badge{font-family:var(--font-mono);font-size:10px;font-weight:500;padding:3px 9px;border-radius:4px;letter-spacing:.06em}
+.badge-red{background:var(--red);color:#fff}
+.badge-gray{background:var(--smoke2);color:#7A766F}
+h1{font-family:var(--font-head);font-size:32px;font-weight:800;line-height:1.15;color:var(--ink);margin-bottom:8px}
+.subtitle{font-size:13px;color:#7A766F;line-height:1.5}
+
+/* SECTIONS */
+.section{margin-bottom:40px}
+.sec-tag{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.sec-num{font-family:var(--font-mono);font-size:11px;color:var(--red);font-weight:500}
+.sec-title{font-family:var(--font-head);font-size:20px;font-weight:700;color:var(--ink)}
+.sec-rule{border:none;border-top:1.5px solid var(--mist);flex:1}
+
+p{margin-bottom:10px;color:var(--ink2);line-height:1.7}
+p strong{color:var(--ink)}
+
+/* FORMULA BLOCKS */
+.formula{background:var(--ink);color:#EAE7E0;font-family:var(--font-mono);font-size:12px;padding:16px 20px;border-radius:10px;margin:14px 0;line-height:2;overflow-x:auto}
+.formula .f-red{color:#F5A99B}
+.formula .f-gold{color:#F0CE7A}
+.formula .f-green{color:#8FDDC4}
+.formula .f-dim{color:#7A766F}
+.formula .f-comment{color:#5A564F;font-style:italic}
+
+/* CARDS */
+.card-grid{display:grid;gap:10px;margin:14px 0}
+.card-grid.cols2{grid-template-columns:1fr 1fr}
+.card-grid.cols3{grid-template-columns:repeat(3,1fr)}
+.card{background:var(--white);border:.5px solid var(--mist);border-radius:10px;padding:16px}
+.card h4{font-family:var(--font-head);font-size:13px;font-weight:600;margin-bottom:8px;color:var(--ink)}
+.card ul{padding-left:0;list-style:none}
+.card ul li{font-size:12px;color:#7A766F;padding:3px 0;border-bottom:.5px solid var(--smoke2);display:flex;gap:6px}
+.card ul li:last-child{border:none}
+.card ul li::before{content:'→';color:var(--red);font-weight:600;flex-shrink:0}
+.card.hl{border-color:var(--green);background:var(--green-light)}
+.card.hl h4{color:var(--green)}
+
+/* PHASE BOX */
+.phase-flow{display:flex;gap:0;margin:14px 0;overflow-x:auto}
+.phase{background:var(--white);border:.5px solid var(--mist);flex:1;padding:14px 12px;position:relative;min-width:120px}
+.phase:not(:last-child)::after{content:'→';position:absolute;right:-12px;top:50%;transform:translateY(-50%);font-size:16px;color:var(--red);font-weight:700;z-index:2}
+.phase:first-child{border-radius:10px 0 0 10px}
+.phase:last-child{border-radius:0 10px 10px 0}
+.phase-num{font-family:var(--font-mono);font-size:9px;color:var(--red);margin-bottom:4px;font-weight:500}
+.phase-name{font-family:var(--font-head);font-size:12px;font-weight:600;color:var(--ink);margin-bottom:4px}
+.phase-body{font-size:10px;color:#7A766F;line-height:1.5}
+
+/* TABLE */
+.var-table{width:100%;border-collapse:collapse;font-size:12px;background:var(--white);border-radius:10px;overflow:hidden;border:.5px solid var(--mist);margin:14px 0}
+.var-table th{padding:10px 14px;font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#7A766F;background:var(--smoke);border-bottom:1px solid var(--mist);text-align:left}
+.var-table td{padding:9px 14px;border-bottom:.5px solid var(--smoke2);vertical-align:top}
+.var-table tr:last-child td{border:none}
+.var-table code{font-family:var(--font-mono);font-size:11px;color:var(--red);background:var(--red-light);padding:1px 5px;border-radius:3px}
+.var-table .type{font-size:10px;font-weight:600;color:#7A766F;font-family:var(--font-mono)}
+
+/* OUTPUT EXAMPLE */
+.output-box{background:var(--ink);color:#EAE7E0;border-radius:10px;padding:18px 20px;margin:14px 0;font-family:var(--font-mono);font-size:11px;line-height:1.9}
+.output-box .ob-route{color:var(--gold);font-weight:500}
+.output-box .ob-pallet{color:#8FDDC4}
+.output-box .ob-note{color:#7A766F;font-style:italic}
+.output-box .ob-kpi{color:#F5A99B}
+
+/* HIGHLIGHT BOX */
+.hl-box{padding:14px 18px;border-radius:10px;margin:14px 0;font-size:13px;line-height:1.7}
+.hl-box.green{background:var(--green-light);border:1px solid #8FDDC4;color:#052D24}
+.hl-box.blue{background:var(--blue-light);border:1px solid #8BB5E8;color:#0A1E4A}
+.hl-box.gold{background:var(--gold-light);border:1px solid #D4A33A;color:#4A2E00}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<div class="page-hdr">
+  <div class="badge-row">
+    <span class="badge badge-red">DAMM · DDI</span>
+    <span class="badge badge-gray">CONFIDENCIAL · PROPUESTA TÉCNICA</span>
+    <span class="badge badge-gray">Logística HORECA · 2026</span>
+  </div>
+  <h1>Modelo Matemático<br>VRP + Optimización de Carga</h1>
+  <div class="subtitle">
+    Sistema conjunto de decisión operacional: Vehicle Routing Problem + Bin Packing por Palés.<br>
+    Aplicado a flota real DDI: 11 camiones grandes (6 palés), 4 camiones medianos (8 palés), 1 furgoneta (3 palés).
+  </div>
+</div>
+
+<!-- 1. PRINCIPIO FUNDAMENTAL -->
+<div class="section">
+  <div class="sec-tag">
+    <span class="sec-num">01</span>
+    <span class="sec-title">Principio fundamental</span>
+    <hr class="sec-rule">
+  </div>
+  <p>La hipótesis central del sistema es que <strong>ruta y carga NO pueden optimizarse por separado</strong>. En distribución HORECA con acceso lateral, la configuración de palés determina la accesibilidad de cada parada, y el orden de paradas determina qué palé debe estar disponible en cada momento. Ambas dimensiones se retroalimentan mutuamente.</p>
+  <div class="hl-box blue">
+    <strong>Objetivo:</strong> calcular simultáneamente la secuencia óptima de clientes y la distribución física de palés, minimizando el coste operativo total: tiempo de ruta + tiempo de descarga + fricción operativa + movimientos innecesarios.
+  </div>
+</div>
+
+<!-- 2. VARIABLES -->
+<div class="section">
+  <div class="sec-tag">
+    <span class="sec-num">02</span>
+    <span class="sec-title">Variables del modelo</span>
+    <hr class="sec-rule">
+  </div>
+  <table class="var-table">
+    <thead><tr><th>Variable</th><th>Tipo</th><th>Descripción</th></tr></thead>
+    <tbody>
+      <tr><td><code>x_ij</code></td><td class="type">Binaria</td><td>1 si el vehículo v va del cliente i al cliente j en la ruta</td></tr>
+      <tr><td><code>p_ik</code></td><td class="type">Binaria</td><td>1 si la carga del cliente i se asigna al palé k</td></tr>
+      <tr><td><code>pos_k</code></td><td class="type">Entero [1..N]</td><td>Posición física del palé k en el camión (1=fondo, N=puerta)</td></tr>
+      <tr><td><code>acc_ik</code></td><td class="type">Continua [0,1]</td><td>Score de accesibilidad del cliente i en el palé k, según orden de entrega</td></tr>
+      <tr><td><code>fric_i</code></td><td class="type">Continua ≥0</td><td>Friction score del cliente i: movimientos necesarios para acceder a su carga</td></tr>
+      <tr><td><code>V_k</code></td><td class="type">Continua</td><td>Volumen ocupado en palé k (en ud o m³ según calibración)</td></tr>
+      <tr><td><code>ret_k</code></td><td class="type">Binaria</td><td>1 si el palé k está parcialmente reservado para retornables</td></tr>
+      <tr><td><code>barrel_k</code></td><td class="type">Binaria</td><td>1 si el palé k contiene barriles (restricción física especial)</td></tr>
+      <tr><td><code>t_desc_i</code></td><td class="type">Continua</td><td>Tiempo estimado de descarga en parada i (función de fric_i + units_i)</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- 3. FUNCIÓN OBJETIVO -->
+<div class="section">
+  <div class="sec-tag">
+    <span class="sec-num">03</span>
+    <span class="sec-title">Función objetivo</span>
+    <hr class="sec-rule">
+  </div>
+  <p>El sistema minimiza el coste operativo total, combinando cuatro componentes con pesos calibrables:</p>
+  <div class="formula">
+<span class="f-comment">/* Función objetivo principal */</span>
+min Z = <span class="f-gold">α·T_ruta</span> + <span class="f-green">β·Σ T_desc_i</span> + <span class="f-red">γ·Σ fric_i</span> + <span class="f-gold">δ·Interference</span>
+
+<span class="f-dim">donde:</span>
+  <span class="f-gold">T_ruta</span>       = Σ d_ij · x_ij                         <span class="f-comment">/* distancia/tiempo de ruta */</span>
+  <span class="f-green">T_desc_i</span>     = base_i + β₁·fric_i + β₂·barrel_i     <span class="f-comment">/* tiempo descarga por parada */</span>
+  <span class="f-red">fric_i</span>       = Σ_k [ p_ik · (N - pos_k) · overload_k ] <span class="f-comment">/* fricción por posición */</span>
+  Interference   = Σ_ij [ p_ik · p_jk · conflict_ij ]   <span class="f-comment">/* conflicto entre mercancías */</span>
+
+<span class="f-dim">Pesos base DDI (calibrables):</span>
+  α = 1.0  β = 1.2  γ = 0.8  δ = 0.6
+  </div>
+
+  <div class="card-grid cols3">
+    <div class="card">
+      <h4>T_ruta</h4>
+      <ul>
+        <li>Tiempo de desplazamiento entre paradas</li>
+        <li>Incluye ventanas horarias de clientes</li>
+        <li>Penaliza rutas con backtracking</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>T_desc_i (fricción)</h4>
+      <ul>
+        <li>Función de posición del palé</li>
+        <li>Barriles: penalización +20 sin acceso rápido</li>
+        <li>Clientes >40 uds sin palé exclusivo: +10</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>Interference</h4>
+      <ul>
+        <li>Conflicto entre retornables y carga nueva</li>
+        <li>Incompatibilidad física de SKUs en palé</li>
+        <li>Clientes de distinto perfil en mismo palé</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- 4. RESTRICCIONES -->
+<div class="section">
+  <div class="sec-tag">
+    <span class="sec-num">04</span>
+    <span class="sec-title">Restricciones del sistema</span>
+    <hr class="sec-rule">
+  </div>
+
+  <div class="card-grid cols2">
+    <div class="card">
+      <h4>Restricciones VRP</h4>
+      <ul>
+        <li>Cada cliente visitado exactamente una vez</li>
+        <li>Ventanas horarias respetadas (hard/soft según cliente)</li>
+        <li>Capacidad de carga del vehículo no superada</li>
+        <li>Regreso al depósito al final de jornada</li>
+        <li>Número máximo de paradas por ruta</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>Restricciones de palés</h4>
+      <ul>
+        <li>Cada cliente asignado a exactamente un palé: Σ_k p_ik = 1</li>
+        <li>Capacidad por palé: Σ_i p_ik · vol_i ≤ cap_k</li>
+        <li>Barriles solo en palés de acceso rápido (pos_k ≥ N-1)</li>
+        <li>Máx. 2 barriles apilados por palé</li>
+        <li>Palé fondo reserva 20% para retornables</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>Restricciones físicas</h4>
+      <ul>
+        <li>Acceso lateral: palés ordenados linealmente (1=fondo, N=puerta)</li>
+        <li>Clientes ≥50 uds: palé exclusivo obligatorio si hay espacio</li>
+        <li>Retornables vacíos: separados físicamente de carga nueva</li>
+        <li>Barriles: zona lateral izquierda, siempre accesibles</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>Restricciones operativas</h4>
+      <ul>
+        <li>Secuencia de descarga = inverso de orden de carga</li>
+        <li>Primer palé accesible (puerta) = primeras paradas de ruta</li>
+        <li>Clientes con barril deben estar en los primeros N/3 de ruta</li>
+        <li>Máx. interferencia tolerable por palé: umbral configurable</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- 5. ARQUITECTURA ALGORÍTMICA -->
+<div class="section">
+  <div class="sec-tag">
+    <span class="sec-num">05</span>
+    <span class="sec-title">Arquitectura algorítmica</span>
+    <hr class="sec-rule">
+  </div>
+  <p>El sistema usa una arquitectura heurística en dos fases acopladas, industrializable con tiempos de respuesta &lt;30 segundos para rutas de hasta 30 paradas:</p>
+
+  <div class="phase-flow">
+    <div class="phase">
+      <div class="phase-num">FASE 1</div>
+      <div class="phase-name">Construcción inicial</div>
+      <div class="phase-body">Clarke-Wright savings + nearest neighbor. Genera solución factible de ruta y asignación inicial de palés.</div>
+    </div>
+    <div class="phase">
+      <div class="phase-num">FASE 2</div>
+      <div class="phase-name">Mejora conjunta</div>
+      <div class="phase-body">2-opt/3-opt sobre rutas + bin-reassignment sobre palés. Iteración hasta convergencia o límite de tiempo.</div>
+    </div>
+    <div class="phase">
+      <div class="phase-num">FASE 3</div>
+      <div class="phase-name">Ajuste por reglas</div>
+      <div class="phase-body">Motor de reglas de negocio: barriles, retornables, clientes VIP, ventanas horarias.</div>
+    </div>
+    <div class="phase">
+      <div class="phase-num">FASE 4</div>
+      <div class="phase-name">Output accionable</div>
+      <div class="phase-body">Generación de recomendación con explicabilidad: orden, palés, zonas, KPIs.</div>
+    </div>
+  </div>
+
+  <div class="formula">
+<span class="f-comment">/* Pseudocódigo del motor de decisión */</span>
+
+<span class="f-gold">function</span> OptimizeRoute(orders, fleet, constraints):
+  route    ← ClarkeWright(orders)           <span class="f-comment">// construcción inicial VRP</span>
+  pallets  ← InitialPacking(route, fleet)   <span class="f-comment">// bin packing por capacidad</span>
+
+  <span class="f-gold">for</span> iter <span class="f-gold">in</span> 1..MAX_ITER:
+    route   ← TwoOpt(route, pallets)        <span class="f-comment">// mejora ruta considerando carga</span>
+    pallets ← ReassignPallets(route)        <span class="f-comment">// reasigna palés con nueva ruta</span>
+    <span class="f-red">if</span> ΔZ &lt; ε: <span class="f-red">break</span>                    <span class="f-comment">// convergencia</span>
+
+  pallets ← ApplyBusinessRules(pallets)     <span class="f-comment">// barriles, retornables, VIPs</span>
+  <span class="f-green">return</span> Explain(route, pallets)            <span class="f-comment">// output con justificación</span>
+  </div>
+</div>
+
+<!-- 6. MODELO HÍBRIDO DE ASIGNACIÓN -->
+<div class="section">
+  <div class="sec-tag">
+    <span class="sec-num">06</span>
+    <span class="sec-title">Motor de decisión híbrido</span>
+    <hr class="sec-rule">
+  </div>
+  <p>La asignación de cada parada al modo de carga óptimo se realiza mediante un clasificador basado en reglas y scoring, no puramente SKU-based ni cliente-based:</p>
+
+  <div class="formula">
+<span class="f-comment">/* Score de modo de carga para cada parada i */</span>
+
+score_sku(i)    = w1·(uds_i ≤ 5) + w2·(skus_i ≤ 2) + w3·(¬barrel_i)
+score_hybrid(i) = w1·(6≤uds_i≤50) + w2·(3≤skus_i≤10) + w3·(urban_zone_i)
+score_client(i) = w1·(uds_i &gt; 50) + w2·(skus_i &gt; 10) + w3·(barrel_i)
+
+mode(i) = argmax { score_sku, score_hybrid, score_client }
+
+<span class="f-comment">/* Pesos calibrados con datos Mollet 11/02/2026 */</span>
+w1 = 0.40   w2 = 0.35   w3 = 0.25
+  </div>
+
+  <div class="card-grid cols3">
+    <div class="card">
+      <h4>Modo SKU-based</h4>
+      <ul>
+        <li>≤5 uds, 1-2 SKUs únicos</li>
+        <li>Sin barril, zona densa</li>
+        <li>Agrupa con clientes similares</li>
+        <li>Palé compartido por tipo de producto</li>
+      </ul>
+    </div>
+    <div class="card hl">
+      <h4>Modo Híbrido ★</h4>
+      <ul>
+        <li>6–50 uds, 3–10 SKUs</li>
+        <li>Posible barril, ruta urbana</li>
+        <li>Sub-zona propia en palé compartido</li>
+        <li>Accesibilidad garantizada sin palé exclusivo</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>Modo Cliente-aware</h4>
+      <ul>
+        <li>>50 uds, >10 SKUs + barril</li>
+        <li>Acceso complicado o cliente VIP</li>
+        <li>Palé exclusivo obligatorio</li>
+        <li>Posición near-door en camión</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- 7. FLOTA Y CAPACIDAD -->
+<div class="section">
+  <div class="sec-tag">
+    <span class="sec-num">07</span>
+    <span class="sec-title">Integración de flota real DDI</span>
+    <hr class="sec-rule">
+  </div>
+  <p>El modelo incorpora las capacidades reales de los vehículos DDI para calcular factibilidad y asignar rutas a vehículos de forma óptima:</p>
+  <div class="formula">
+<span class="f-comment">/* Capacidades por tipo de vehículo */</span>
+
+FLEET = {
+  <span class="f-gold">"camion_grande"</span>: { count: 11, pallets: 6, cap_per_pallet: 120, total_cap: 720 },
+  <span class="f-green">"camion_mediano"</span>: { count: 4,  pallets: 8, cap_per_pallet: 90,  total_cap: 720 },
+  <span class="f-red">"furgoneta"</span>:      { count: 1,  pallets: 3, cap_per_pallet: 60,  total_cap: 180 },
+}
+
+<span class="f-comment">/* Asignación ruta → vehículo */</span>
+assign_vehicle(route) =
+  <span class="f-gold">if</span> total_units(route) &gt; 500 <span class="f-gold">or</span> barrels(route) &gt; 5: camion_mediano
+  <span class="f-gold">elif</span> total_units(route) &gt; 150: camion_grande
+  <span class="f-gold">else</span>: furgoneta
+  </div>
+
+  <div class="hl-box gold">
+    <strong>Nota de calibración:</strong> los umbrales de asignación deben validarse con datos históricos de DDI. El modelo permite ajustar los parámetros por zona geográfica (urbana vs periurbana), tipo de cliente (HORECA premium vs volumen) y época del año (temporada alta cerveza).
+  </div>
+</div>
+
+<!-- 8. OUTPUT ACCIONABLE -->
+<div class="section">
+  <div class="sec-tag">
+    <span class="sec-num">08</span>
+    <span class="sec-title">Output accionable — ejemplo real</span>
+    <hr class="sec-rule">
+  </div>
+  <p>El sistema genera una recomendación operativa completa, explicable y accionable por el conductor sin conocimiento técnico del modelo:</p>
+
+  <div class="output-box">
+<span class="ob-route">RUTA DR0006 · J.Vélez Castro · Camión grande (6 palés) · 11/02/2026</span>
+
+<span class="ob-pallet">PALÉ 6 [PUERTA — primeras entregas]:</span>
+  → FRANKFURT MOLLET SL (70 uds) — palé exclusivo · 4 barriles en acceso lateral izquierdo
+  → FUSSION (44 uds) — beer ×15 + vacíos ×15 + agua ×5
+
+<span class="ob-pallet">PALÉ 5 [ACCESO RÁPIDO]:</span>
+  → BAR KARAI (34 uds) — beer ×12 + vacíos ×12 · barril acceso directo
+  → XURRERIA (29 uds) — agua ×6 + beer ×7
+
+<span class="ob-pallet">PALÉ 4 [CENTRO]:</span>
+  → CANTINA RENFE (29 uds) · RECO DE LAURA (24 uds) · LA TASCA BAR (21 uds) — zona híbrida
+
+<span class="ob-pallet">PALÉ 3 [CENTRO]:</span>
+  → LA BODEGUETA (20 uds) · EL GARBI BAR (20 uds) · VENECIA BAR (20 uds)
+
+<span class="ob-pallet">PALÉ 2 [CENTRO-FONDO]:</span>
+  → BAR GRANADA (12 uds) · CAL TAPA GASTROBAR (8 uds) · clientes pequeños agrupados
+
+<span class="ob-pallet">PALÉ 1 [FONDO — reserva retornables 20%]:</span>
+  → PITAPES BERENGUER (10 uds) · últimas paradas · zona retornables reservada
+
+<span class="ob-kpi">KPIs estimados:</span>
+  Tiempo descarga: 4.6h (vs 5.8h modelo A)   Friction total: 29 (vs 74)
+  Movimientos extra evitados: 129             Palés utilizados: 6/6
+  Interferencia esperada: 26 (vs 79)          Retornables zona reservada: palé 1 (20%)
+  </div>
+</div>
+
+<!-- 9. EXPLICABILIDAD -->
+<div class="section">
+  <div class="sec-tag">
+    <span class="sec-num">09</span>
+    <span class="sec-title">Explicabilidad del sistema</span>
+    <hr class="sec-rule">
+  </div>
+  <p>Cada decisión del modelo debe ser justificable para ser adoptada por el equipo operativo. El sistema genera automáticamente las razones de cada asignación:</p>
+
+  <div class="card-grid cols2">
+    <div class="card">
+      <h4>¿Por qué esta ruta?</h4>
+      <ul>
+        <li>Minimiza backtracking en zona Mollet Norte</li>
+        <li>Clientes con barril agrupados al inicio (acceso rápido)</li>
+        <li>Ventanas horarias de FRANKFURT respetadas (08:00–10:00)</li>
+        <li>Secuencia optimiza retorno retornables al depósito</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>¿Por qué esta organización de palés?</h4>
+      <ul>
+        <li>FRANKFURT en palé 6 (puerta): 70 uds → descarga sin reorganización</li>
+        <li>Barriles siempre en acceso lateral izquierdo</li>
+        <li>Clientes pequeños agrupados en palés fondo: reducen movimientos</li>
+        <li>Retornables reservados en palé 1: evita mezcla con carga nueva</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>Trade-offs optimizados</h4>
+      <ul>
+        <li>+28 min preparación almacén → −72 min descarga en ruta</li>
+        <li>Palé exclusivo para FRANKFURT → +0.5 palé de capacidad perdida</li>
+        <li>Retornables en fondo → conductor los recoge sin descargar carga nueva</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>Retroalimentación ruta ↔ carga</h4>
+      <ul>
+        <li>Si FRANKFURT se adelanta en ruta → palé 6 se mantiene accesible más tiempo</li>
+        <li>Cambio de vehículo (6→8 palés) → DR0017 distribuye barriles en 2 palés</li>
+        <li>Nuevo cliente urgente → sistema recalcula posición en palé sin modificar ruta</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- 10. INDUSTRIALIZACIÓN -->
+<div class="section">
+  <div class="sec-tag">
+    <span class="sec-num">10</span>
+    <span class="sec-title">Hoja de ruta de industrialización</span>
+    <hr class="sec-rule">
+  </div>
+
+  <div class="card-grid cols2">
+    <div class="card">
+      <h4>Fase I — Validación (4–6 semanas)</h4>
+      <ul>
+        <li>Calibrar pesos α,β,γ,δ con datos históricos DDI</li>
+        <li>Validar capacidades reales por palé y vehículo</li>
+        <li>Pilotar con 2 rutas reales en Mollet</li>
+        <li>Medir ahorro real vs estimado del modelo</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>Fase II — Motor automático (8–12 semanas)</h4>
+      <ul>
+        <li>API de optimización: input pedidos → output palés+ruta</li>
+        <li>Integración con sistema de pedidos DDI</li>
+        <li>Dashboard de control para jefes de ruta</li>
+        <li>Generación de hoja de carga por conductor</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>Fase III — Escala (3–6 meses)</h4>
+      <ul>
+        <li>Extensión a otras zonas geográficas DDI</li>
+        <li>Incorporación de ML para predicción de fricción</li>
+        <li>Optimización multi-día y multi-ruta simultánea</li>
+        <li>Retroalimentación en tiempo real (GPS + incidencias)</li>
+      </ul>
+    </div>
+    <div class="card hl">
+      <h4>KPIs objetivo del sistema</h4>
+      <ul>
+        <li>−15 a −25% tiempo descarga por jornada</li>
+        <li>−30 a −50% movimientos internos evitados</li>
+        <li>+8 a +12% coste preparación almacén (neto positivo)</li>
+        <li>&gt;80% paradas con acceso directo sin reorganización</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="hl-box green">
+    <strong>Conclusión:</strong> el modelo matemático propuesto es industrializable, explicable y directamente aplicable a la operativa real de Damm/DDI. La arquitectura heurística garantiza tiempos de respuesta operativos (&lt;30 s) y la integración explícita de la flota real (6/8/3 palés) convierte el output en una recomendación accionable por cualquier conductor, sin requerir conocimiento técnico del modelo subyacente.
+  </div>
+</div>
+
+</div>
+</body>
+</html>
