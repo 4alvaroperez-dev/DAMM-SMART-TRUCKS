@@ -1,0 +1,968 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DAMM DDI — Simulador Logístico · Mollet del Vallès</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --red:#C8102E;
+  --red-dark:#9A0A22;
+  --red-light:#F5E0E4;
+  --gold:#E8B84B;
+  --gold-light:#FBF0D3;
+  --ink:#12100F;
+  --ink2:#2E2A29;
+  --smoke:#F5F3EF;
+  --smoke2:#EAE7E0;
+  --mist:#D6D2C9;
+  --white:#FFFFFF;
+  --green:#1A7A5A;
+  --green-light:#DFF2EA;
+  --orange:#C85A1A;
+  --orange-light:#FDEEE4;
+  --blue:#1A4A8C;
+  --blue-light:#E0EAF7;
+
+  --font-head:'Syne',sans-serif;
+  --font-body:'DM Sans',sans-serif;
+  --font-mono:'DM Mono',monospace;
+}
+
+html,body{background:var(--smoke);color:var(--ink);font-family:var(--font-body);font-size:14px;min-height:100vh}
+
+/* ── LAYOUT ── */
+.shell{max-width:1100px;margin:0 auto;padding:32px 24px 80px}
+
+/* ── HEADER ── */
+.hdr{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:36px;padding-bottom:24px;border-bottom:1.5px solid var(--mist)}
+.hdr-left{}
+.hdr-logo{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.logo-badge{background:var(--red);color:var(--white);font-family:var(--font-head);font-weight:800;font-size:13px;padding:4px 10px;border-radius:4px;letter-spacing:.08em}
+.hdr h1{font-family:var(--font-head);font-weight:700;font-size:26px;color:var(--ink);line-height:1.2;margin-bottom:5px}
+.hdr-sub{font-size:12px;color:#7A766F;letter-spacing:.02em}
+.hdr-meta{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+.hdr-date{font-family:var(--font-mono);font-size:11px;background:var(--ink);color:var(--smoke);padding:4px 10px;border-radius:4px}
+.hdr-fleet{font-size:11px;color:#7A766F;text-align:right;line-height:1.6}
+
+/* ── KPI CARDS ── */
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:28px}
+.kcard{background:var(--white);border-radius:12px;padding:16px 18px;border:.5px solid var(--mist);position:relative;overflow:hidden}
+.kcard::before{content:'';position:absolute;top:0;left:0;width:3px;height:100%;background:var(--mist)}
+.kcard.accent-red::before{background:var(--red)}
+.kcard.accent-gold::before{background:var(--gold)}
+.kcard.accent-green::before{background:var(--green)}
+.kcard.accent-orange::before{background:var(--orange)}
+.kcard .klbl{font-size:10px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:#7A766F;margin-bottom:6px}
+.kcard .kval{font-family:var(--font-head);font-size:28px;font-weight:700;color:var(--ink);line-height:1}
+.kcard .ksub{font-size:11px;color:#7A766F;margin-top:4px}
+.kcard .kbadge{font-size:10px;font-weight:600;background:var(--gold-light);color:#8A5E00;padding:2px 7px;border-radius:20px;display:inline-block;margin-top:5px}
+.kcard.dim .kval{color:#7A766F}
+
+/* ── FLEET INFO BOX ── */
+.fleet-box{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:28px}
+.fcard{background:var(--white);border:.5px solid var(--mist);border-radius:10px;padding:12px 14px;display:flex;align-items:center;gap:12px}
+.fcard-icon{width:38px;height:38px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.fcard.ft-big .fcard-icon{background:var(--blue-light)}
+.fcard.ft-med .fcard-icon{background:var(--green-light)}
+.fcard.ft-van .fcard-icon{background:var(--gold-light)}
+.fcard-info{}
+.fcard-name{font-weight:600;font-size:13px;margin-bottom:2px}
+.fcard-detail{font-size:11px;color:#7A766F}
+.fcard-pallets{font-family:var(--font-mono);font-size:12px;font-weight:500;color:var(--red);margin-top:1px}
+
+/* ── TABS ── */
+.tabs{display:flex;gap:2px;margin-bottom:24px;border-bottom:1.5px solid var(--mist);padding-bottom:0}
+.tab{font-family:var(--font-body);padding:8px 16px;font-size:12px;font-weight:500;cursor:pointer;border:none;background:none;color:#7A766F;border-bottom:2.5px solid transparent;margin-bottom:-1.5px;letter-spacing:.01em;transition:color .15s}
+.tab.active{color:var(--red);border-bottom-color:var(--red)}
+.tab:hover:not(.active){color:var(--ink)}
+.panel{display:none}.panel.active{display:block}
+
+/* ── SECTION LABEL ── */
+.sec{font-family:var(--font-head);font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#7A766F;margin:24px 0 10px}
+.sec-rule{border:none;border-top:1px solid var(--mist);margin-bottom:10px}
+
+/* ── ROUTE BLOCKS ── */
+.ruta-hdr{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--white);border-radius:10px;border:.5px solid var(--mist);margin-bottom:6px;cursor:pointer;transition:border-color .15s}
+.ruta-hdr:hover{border-color:var(--mist)}
+.rtag{padding:3px 10px;border-radius:5px;font-size:11px;font-weight:600;font-family:var(--font-mono)}
+.rinfo{font-size:12px;color:#7A766F}
+.rarrow{margin-left:auto;font-size:11px;color:#7A766F;transition:transform .2s}
+.ruta-hdr.open .rarrow{transform:rotate(90deg)}
+.stops-list{display:none;margin-bottom:10px;background:var(--white);border-radius:0 0 10px 10px;border:.5px solid var(--mist);border-top:none;overflow:hidden}
+.stops-list.open{display:block}
+.stop-hd{display:grid;grid-template-columns:1fr 60px 50px 70px 70px;gap:6px;padding:7px 14px;font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#7A766F;border-bottom:1px solid var(--smoke2);background:var(--smoke)}
+.stop-row{display:grid;grid-template-columns:1fr 60px 50px 70px 70px;gap:6px;align-items:center;padding:8px 14px;border-bottom:.5px solid var(--smoke2);font-size:12px;transition:background .1s}
+.stop-row:hover{background:var(--smoke)}
+.stop-row:last-child{border:none}
+.cname{font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--ink)}
+.cunits,.cskus{color:#7A766F;font-size:11px;text-align:right}
+.bpill{display:inline-block;font-size:9px;padding:2px 6px;border-radius:4px;background:#FFE5DE;color:#7A1A0A;font-weight:600;font-family:var(--font-mono)}
+.fpill{font-size:10px;padding:2px 7px;border-radius:4px;font-weight:600;font-family:var(--font-mono)}
+.fp-low{background:var(--green-light);color:#0A5030}
+.fp-mid{background:var(--gold-light);color:#7A4500}
+.fp-hi{background:var(--orange-light);color:#7A2A00}
+
+/* ── TRUCK VIEWER ── */
+.truck-ctrl{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:18px;padding:14px 16px;background:var(--white);border-radius:10px;border:.5px solid var(--mist)}
+.truck-ctrl label{font-size:11px;font-weight:600;letter-spacing:.04em;color:#7A766F;text-transform:uppercase}
+select{padding:6px 10px;border:.5px solid var(--mist);border-radius:7px;background:var(--white);color:var(--ink);font-size:12px;font-family:var(--font-body);cursor:pointer;outline:none}
+select:focus{border-color:var(--red)}
+
+/* ── PALLET GRID ── */
+.pallets-outer{position:relative;margin-bottom:12px}
+.truck-diagram{background:var(--white);border-radius:12px;border:.5px solid var(--mist);padding:18px;overflow:hidden}
+.truck-label-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--smoke2)}
+.truck-label-bar .tl-left{font-family:var(--font-mono);font-size:11px;color:#7A766F}
+.truck-label-bar .tl-right{font-family:var(--font-mono);font-size:11px;color:#7A766F}
+.access-tag{font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--red);background:var(--red-light);padding:2px 8px;border-radius:4px}
+
+.pallets-grid{display:flex;gap:8px}
+.pallet-col{display:flex;flex-direction:column;gap:6px;flex:1}
+.pallet-num{font-size:9px;font-weight:600;font-family:var(--font-mono);color:#7A766F;text-align:center;margin-bottom:3px;letter-spacing:.04em}
+.pallet{border:1.5px solid var(--mist);border-radius:9px;padding:7px 6px;min-height:120px;display:flex;flex-direction:column;gap:3px;background:var(--smoke);transition:border-color .2s;position:relative}
+.pallet.active{border-color:#BDBAB3}
+.pallet.pos-front{border-color:#F5C4B3;background:#FFF8F6}
+.pallet.pos-rear{border-color:#C4D9F5;background:#F6F9FF}
+.pallet-zone{font-size:8px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;text-align:center;margin-bottom:3px;padding:2px 0;border-radius:3px}
+.pallet-zone.z-front{color:var(--red);background:var(--red-light)}
+.pallet-zone.z-rear{color:var(--blue);background:var(--blue-light)}
+.pallet-zone.z-mid{color:#5A4A00;background:var(--gold-light)}
+.pitem{border-radius:5px;padding:4px 5px;font-size:9px;line-height:1.3;border:.5px solid rgba(0,0,0,.06)}
+.pitem .pi-name{font-weight:600;display:block;margin-bottom:1px}
+.pitem .pi-qty{opacity:.7;font-family:var(--font-mono)}
+.pitem.pi-header{background:transparent!important;border-color:transparent!important;padding:2px 0;font-size:8px;font-weight:700;letter-spacing:.05em;color:#7A766F;text-transform:uppercase;margin-top:4px}
+.pallet-pct{font-size:9px;font-family:var(--font-mono);color:#7A766F;text-align:center;margin-top:auto;padding-top:4px;border-top:.5px solid var(--smoke2)}
+.pallet-empty{display:flex;align-items:center;justify-content:center;color:#BDBAB3;font-size:11px;flex:1}
+
+.truck-access-bar{display:flex;align-items:center;margin-top:10px;gap:4px}
+.ac-label{font-size:10px;font-weight:600;color:var(--red);letter-spacing:.04em;white-space:nowrap}
+.ac-line{flex:1;height:2px;background:linear-gradient(to right,var(--red),transparent)}
+.ac-arrow{font-size:16px;color:var(--red)}
+
+.truck-info{padding:12px 16px;background:var(--white);border-radius:10px;border:.5px solid var(--mist);font-size:12px;color:#7A766F;line-height:1.6;margin-top:8px}
+.truck-info strong{color:var(--ink)}
+
+/* ── LEGEND ── */
+.legend{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.leg-item{display:flex;align-items:center;gap:5px;font-size:11px;color:#7A766F}
+.leg-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0}
+
+/* ── COMPARISON TABLE ── */
+.cmp-table{width:100%;border-collapse:collapse;font-size:12px;background:var(--white);border-radius:10px;overflow:hidden;border:.5px solid var(--mist)}
+.cmp-table th{text-align:left;padding:10px 14px;font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#7A766F;background:var(--smoke);border-bottom:1px solid var(--mist)}
+.cmp-table td{padding:10px 14px;border-bottom:.5px solid var(--smoke2)}
+.cmp-table tr:last-child td{border:none}
+.cmp-table tr:hover td{background:var(--smoke)}
+.good{color:var(--green);font-weight:600}
+.bad{color:var(--orange);font-weight:600}
+.warn{color:#BA7517;font-weight:600}
+
+/* ── SAVINGS BOX ── */
+.savings-box{padding:14px 18px;background:var(--green-light);border-radius:10px;border:1px solid #8FDDC4;font-size:13px;color:#085041;margin-top:16px;line-height:1.7}
+.savings-box strong{color:#052D24}
+
+/* ── DECISION RULES ── */
+.rules-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:8px}
+.rule-card{border:.5px solid var(--mist);border-radius:10px;padding:14px;background:var(--white)}
+.rule-card.hl{border-color:var(--green);border-width:1.5px;background:var(--green-light)}
+.rule-card .rtitle{font-family:var(--font-head);font-size:13px;font-weight:600;margin-bottom:7px;color:var(--ink)}
+.rule-card .rbody{font-size:11px;color:#7A766F;line-height:1.6}
+.rule-card .rdrec{font-size:9px;font-weight:700;background:var(--green);color:var(--white);border-radius:4px;padding:2px 7px;display:inline-block;margin-top:6px;letter-spacing:.04em;text-transform:uppercase}
+.rule-card.hl .rtitle{color:var(--green)}
+
+/* ── PHYSICAL RULES ── */
+.phys-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px}
+.phys-card{background:var(--white);border:.5px solid var(--mist);border-radius:10px;padding:14px}
+.phys-card h4{font-family:var(--font-head);font-size:12px;font-weight:600;margin-bottom:8px;color:var(--ink)}
+.phys-card p,.phys-card div{font-size:11px;color:#7A766F;line-height:1.7}
+.phys-card strong{color:var(--ink)}
+
+/* ── COST FORMULA ── */
+.formula-box{font-family:var(--font-mono);font-size:11px;background:var(--ink);color:#D6D2C9;padding:16px 18px;border-radius:10px;line-height:2;margin-top:8px}
+.formula-box .fm-a{color:#F5A99B}
+.formula-box .fm-h{color:#8FDDC4}
+.formula-box .fm-val-a{color:var(--gold);font-weight:500}
+.formula-box .fm-val-h{color:#5DCAA5;font-weight:500}
+
+/* ── CHARTS ── */
+.chart-wrap{background:var(--white);border:.5px solid var(--mist);border-radius:10px;padding:16px;margin-top:8px;margin-bottom:8px}
+.chart-title{font-size:11px;font-weight:600;color:#7A766F;margin-bottom:10px;letter-spacing:.04em;text-transform:uppercase}
+
+/* ── UTILS ── */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.mt8{margin-top:8px}
+
+/* ── EXECUTIVE SUMMARY ── */
+.exec-hero{display:grid;grid-template-columns:1fr 1fr;gap:20px;background:var(--ink);border-radius:14px;padding:28px 28px;margin-bottom:20px;color:var(--white);align-items:center}
+.exec-hero-label{font-family:var(--font-mono);font-size:10px;color:#7A766F;letter-spacing:.08em;margin-bottom:10px}
+.exec-hero-title{font-family:var(--font-head);font-size:24px;font-weight:700;line-height:1.2;margin-bottom:8px}
+.exec-hero-accent{color:var(--gold)}
+.exec-hero-sub{font-size:12px;color:#7A766F}
+.exec-time-compare{display:flex;align-items:center;gap:12px}
+.etc-block{flex:1;background:rgba(255,255,255,.06);border-radius:10px;padding:14px 12px;border:.5px solid rgba(255,255,255,.1)}
+.etc-label{font-size:10px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;margin-bottom:6px;color:#7A766F}
+.etc-val{font-family:var(--font-head);font-size:28px;font-weight:700;line-height:1;margin-bottom:2px}
+.etc-bad .etc-val{color:#F5A99B}
+.etc-good .etc-val{color:#8FDDC4}
+.etc-sub{font-size:11px;color:#7A766F;margin-bottom:8px}
+.etc-bar{height:5px;background:rgba(255,255,255,.1);border-radius:3px;overflow:hidden}
+.etc-bar-fill{height:100%;border-radius:3px;transition:width .6s ease}
+.etc-arrow{font-size:20px;color:#7A766F;flex-shrink:0}
+
+.exec-kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+.exec-kpi{background:var(--white);border:.5px solid var(--mist);border-radius:12px;padding:18px 16px;text-align:center}
+.exec-kpi-icon{font-size:22px;margin-bottom:8px}
+.exec-kpi-val{font-family:var(--font-head);font-size:26px;font-weight:700;color:var(--green);line-height:1;margin-bottom:4px}
+.exec-kpi-name{font-size:11px;font-weight:600;color:var(--ink);margin-bottom:5px}
+.exec-kpi-detail{font-size:10px;color:#7A766F;line-height:1.5}
+
+.exec-balance{background:var(--smoke2);border-radius:12px;padding:18px 20px;margin-bottom:20px;border:.5px solid var(--mist)}
+.exec-balance-title{font-family:var(--font-head);font-size:13px;font-weight:600;color:var(--ink);margin-bottom:14px}
+.exec-balance-row{display:flex;align-items:center;gap:12px}
+.exec-balance-item{flex:1;background:var(--white);border-radius:10px;padding:14px;text-align:center;border:.5px solid var(--mist)}
+.exec-balance-eq{font-size:20px;color:#7A766F;font-weight:300;flex-shrink:0}
+.ebi-label{font-size:10px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:#7A766F;margin-bottom:5px}
+.ebi-val{font-family:var(--font-head);font-size:22px;font-weight:700;line-height:1;margin-bottom:3px}
+.ebi-sub{font-size:10px;color:#7A766F}
+.exec-balance-neg .ebi-val{color:var(--orange)}
+.exec-balance-pos .ebi-val{color:var(--green)}
+.exec-balance-win{background:var(--green-light);border-color:#8FDDC4}
+.exec-balance-win .ebi-val{color:var(--green)}
+.exec-balance-win .ebi-label{color:var(--green)}
+
+.exec-bottom-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+
+.exec-insights{display:flex;flex-direction:column;gap:8px}
+.insight-card{display:flex;gap:12px;background:var(--white);border:.5px solid var(--mist);border-radius:10px;padding:12px 14px;align-items:flex-start}
+.insight-card.insight-red{border-left:3px solid var(--red)}
+.insight-card.insight-gold{border-left:3px solid var(--gold)}
+.insight-card.insight-green{border-left:3px solid var(--green)}
+.insight-card.insight-blue{border-left:3px solid var(--blue)}
+.ic-icon{font-size:18px;flex-shrink:0;margin-top:1px}
+.ic-title{font-size:12px;font-weight:600;color:var(--ink);margin-bottom:3px}
+.ic-text{font-size:11px;color:#7A766F;line-height:1.5}
+
+.exec-access-bars{display:flex;flex-direction:column;gap:8px;padding:12px 14px;background:var(--white);border:.5px solid var(--mist);border-radius:10px}
+.eab-row{display:flex;align-items:center;gap:10px}
+.eab-label{font-size:11px;color:#7A766F;width:110px;flex-shrink:0}
+.eab-bar-wrap{flex:1;height:8px;background:var(--smoke2);border-radius:4px;overflow:hidden}
+.eab-bar{height:100%;border-radius:4px}
+.eab-pct{font-family:var(--font-mono);font-size:11px;font-weight:600;color:var(--ink);width:36px;text-align:right;flex-shrink:0}
+
+.exec-mini-kpis{display:flex;flex-direction:column;gap:0;background:var(--white);border:.5px solid var(--mist);border-radius:10px;overflow:hidden}
+.emk{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:.5px solid var(--smoke2);font-size:11px}
+.emk:last-child{border:none}
+.emk-label{flex:1;color:#7A766F}
+.emk-val{font-family:var(--font-mono);font-weight:600;font-size:11px}
+.emk-val.emk-good{color:var(--green)}
+.emk-val.emk-neutral{color:#7A766F}
+.emk-note{font-size:10px;color:#BDBAB3;margin-left:4px}
+
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- HEADER -->
+<div class="hdr">
+  <div class="hdr-left">
+    <div class="hdr-logo">
+      <span class="logo-badge">DAMM · DDI</span>
+    </div>
+    <h1>Simulador Logístico<br>Mollet del Vallès</h1>
+    <div class="hdr-sub">Optimización VRP + Carga por Palés · Modelo Híbrido</div>
+  </div>
+  <div class="hdr-meta">
+    <div class="hdr-date">11 / 02 / 2026</div>
+    <div class="hdr-fleet">
+      4 rutas · 61 paradas · 1.332 unidades<br>
+      16 barriles · flota mixta 16 vehículos
+    </div>
+  </div>
+</div>
+
+<!-- FLEET OVERVIEW -->
+<div class="fleet-box">
+  <div class="fcard ft-big">
+    <div class="fcard-icon">🚛</div>
+    <div class="fcard-info">
+      <div class="fcard-name">Camión Grande</div>
+      <div class="fcard-detail">11 unidades en flota</div>
+      <div class="fcard-pallets">6 palés / camión</div>
+    </div>
+  </div>
+  <div class="fcard ft-med">
+    <div class="fcard-icon">🚚</div>
+    <div class="fcard-info">
+      <div class="fcard-name">Camión Mediano</div>
+      <div class="fcard-detail">4 unidades en flota</div>
+      <div class="fcard-pallets">8 palés / camión</div>
+    </div>
+  </div>
+  <div class="fcard ft-van">
+    <div class="fcard-icon">🚐</div>
+    <div class="fcard-info">
+      <div class="fcard-name">Furgoneta</div>
+      <div class="fcard-detail">1 unidad en flota</div>
+      <div class="fcard-pallets">3 palés / furgoneta</div>
+    </div>
+  </div>
+</div>
+
+<!-- KPIs -->
+<div class="kpi-row">
+  <div class="kcard accent-red">
+    <div class="klbl">Paradas totales</div>
+    <div class="kval">61</div>
+    <div class="ksub">4 rutas · Mollet del Vallès</div>
+  </div>
+  <div class="kcard accent-gold">
+    <div class="klbl">Unidades totales</div>
+    <div class="kval">1.332</div>
+    <div class="ksub">~22 uds / parada media</div>
+  </div>
+  <div class="kcard accent-orange">
+    <div class="klbl">Con barril</div>
+    <div class="kval">16</div>
+    <div class="ksub">26% de las paradas</div>
+    <span class="kbadge">Gestión especial</span>
+  </div>
+  <div class="kcard accent-green">
+    <div class="klbl">Ahorro estimado</div>
+    <div class="kval">−72<span style="font-size:16px;font-weight:400"> min</span></div>
+    <div class="ksub">Modelo híbrido vs SKU-based</div>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <button class="tab active" onclick="show('ejecutivo')">▶ Resumen ejecutivo</button>
+  <button class="tab" onclick="show('resumen')">Resumen del día</button>
+  <button class="tab" onclick="show('paradas')">Paradas por ruta</button>
+  <button class="tab" onclick="show('camion')">Modelo palés</button>
+  <button class="tab" onclick="show('comparativa')">SKU vs Híbrido</button>
+  <button class="tab" onclick="show('decision')">Decisión final</button>
+</div>
+
+<!-- ══ PANEL: EJECUTIVO ══ -->
+<div id="ejecutivo" class="panel active">
+
+  <!-- HERO IMPACT -->
+  <div class="exec-hero">
+    <div class="exec-hero-left">
+      <div class="exec-hero-label">IMPACTO OPERATIVO · MOLLET DEL VALLÈS · 11/02/2026</div>
+      <div class="exec-hero-title">El modelo híbrido recupera<br><span class="exec-hero-accent">+58 minutos</span> por jornada</div>
+      <div class="exec-hero-sub">Optimizando ruta y carga de forma conjunta — no secuencial</div>
+    </div>
+    <div class="exec-hero-right">
+      <div class="exec-time-compare">
+        <div class="etc-block etc-bad">
+          <div class="etc-label">Modelo actual (SKU)</div>
+          <div class="etc-val">5,8 h</div>
+          <div class="etc-sub">tiempo descarga</div>
+          <div class="etc-bar"><div class="etc-bar-fill" style="width:100%;background:var(--red)"></div></div>
+        </div>
+        <div class="etc-arrow">→</div>
+        <div class="etc-block etc-good">
+          <div class="etc-label">Modelo híbrido</div>
+          <div class="etc-val">4,6 h</div>
+          <div class="etc-sub">tiempo descarga</div>
+          <div class="etc-bar"><div class="etc-bar-fill" style="width:79%;background:var(--green)"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN KPI ROW -->
+  <div class="exec-kpi-grid">
+    <div class="exec-kpi exec-kpi-main">
+      <div class="exec-kpi-icon">⏱</div>
+      <div class="exec-kpi-val">−72 min</div>
+      <div class="exec-kpi-name">Ahorro en descarga</div>
+      <div class="exec-kpi-detail">De 348 min → 276 min/día<br>en 3 rutas principales</div>
+    </div>
+    <div class="exec-kpi exec-kpi-main">
+      <div class="exec-kpi-icon">🔄</div>
+      <div class="exec-kpi-val">−41%</div>
+      <div class="exec-kpi-name">Movimientos evitados</div>
+      <div class="exec-kpi-detail">312 → 183 movimientos<br>extra por jornada</div>
+    </div>
+    <div class="exec-kpi exec-kpi-main">
+      <div class="exec-kpi-icon">⚡</div>
+      <div class="exec-kpi-val">−61%</div>
+      <div class="exec-kpi-name">Reducción fricción</div>
+      <div class="exec-kpi-detail">Friction Score global<br>74 → 29 puntos</div>
+    </div>
+    <div class="exec-kpi exec-kpi-main">
+      <div class="exec-kpi-icon">📦</div>
+      <div class="exec-kpi-val">−67%</div>
+      <div class="exec-kpi-name">Interferencia carga</div>
+      <div class="exec-kpi-detail">Interference Score<br>79 → 26 puntos</div>
+    </div>
+  </div>
+
+  <!-- BALANCE NETO -->
+  <div class="exec-balance">
+    <div class="exec-balance-title">Balance neto del cambio de modelo</div>
+    <div class="exec-balance-row">
+      <div class="exec-balance-item exec-balance-neg">
+        <div class="ebi-label">Coste adicional almacén</div>
+        <div class="ebi-val">+28 min</div>
+        <div class="ebi-sub">preparación carga (+8–12%)</div>
+      </div>
+      <div class="exec-balance-eq">=</div>
+      <div class="exec-balance-item exec-balance-pos">
+        <div class="ebi-label">Ahorro en ruta</div>
+        <div class="ebi-val">−72 min</div>
+        <div class="ebi-sub">descarga en cliente</div>
+      </div>
+      <div class="exec-balance-eq">→</div>
+      <div class="exec-balance-item exec-balance-win">
+        <div class="ebi-label">Beneficio neto</div>
+        <div class="ebi-val">+44 min</div>
+        <div class="ebi-sub">recuperados / jornada</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- INSIGHTS + SCORE CHARTS SIDE BY SIDE -->
+  <div class="exec-bottom-grid">
+    <div>
+      <div class="sec">Insights clave</div>
+      <div class="exec-insights">
+        <div class="insight-card insight-red">
+          <div class="ic-icon">🍺</div>
+          <div class="ic-body">
+            <div class="ic-title">Barriles son el cuello de botella</div>
+            <div class="ic-text">16 paradas con barril (26% del total) concentran el 70% de la fricción operativa en el modelo actual. Un palé dedicado de acceso lateral elimina el problema en la mayoría de casos.</div>
+          </div>
+        </div>
+        <div class="insight-card insight-gold">
+          <div class="ic-icon">📍</div>
+          <div class="ic-body">
+            <div class="ic-title">DR0017 es la ruta con más impacto</div>
+            <div class="ic-text">25 paradas y 7 barriles — la ruta más densa concentra el mayor ahorro potencial. El modelo híbrido reduce su friction de ~38 a ~12 puntos por ruta.</div>
+          </div>
+        </div>
+        <div class="insight-card insight-green">
+          <div class="ic-icon">🔃</div>
+          <div class="ic-body">
+            <div class="ic-title">60% de carga genera logística inversa</div>
+            <div class="ic-text">Retornables y vacíos mezclados con carga nueva multiplican movimientos internos. Reservar el palé de fondo para retornables elimina ~80 movimientos evitables por día.</div>
+          </div>
+        </div>
+        <div class="insight-card insight-blue">
+          <div class="ic-icon">💡</div>
+          <div class="ic-body">
+            <div class="ic-title">Ni SKU-based ni cliente-based es óptimo</div>
+            <div class="ic-text">El modelo híbrido dinámico combina ambos: clientes pequeños agrupados por SKU, clientes grandes con zona propia en palé. El resultado es un −36% en coste operativo total.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="sec">Coste operativo total (puntos)</div>
+      <div class="chart-wrap">
+        <div style="position:relative;height:180px">
+          <canvas id="cExecScore" role="img" aria-label="Coste operativo total"></canvas>
+        </div>
+      </div>
+      <div class="sec" style="margin-top:16px">Paradas con acceso directo estimado</div>
+      <div class="exec-access-bars">
+        <div class="eab-row">
+          <div class="eab-label">Modelo A (SKU)</div>
+          <div class="eab-bar-wrap"><div class="eab-bar" style="width:40%;background:var(--red)"></div></div>
+          <div class="eab-pct">~40%</div>
+        </div>
+        <div class="eab-row">
+          <div class="eab-label">Modelo Híbrido</div>
+          <div class="eab-bar-wrap"><div class="eab-bar" style="width:85%;background:var(--green)"></div></div>
+          <div class="eab-pct">~85%</div>
+        </div>
+      </div>
+      <div class="sec" style="margin-top:16px">Reducción por métrica</div>
+      <div class="exec-mini-kpis">
+        <div class="emk"><span class="emk-label">Paradas problemáticas barril</span><span class="emk-val emk-neutral">16 → 16</span><span class="emk-note">física invariante</span></div>
+        <div class="emk"><span class="emk-label">Coste función objetivo</span><span class="emk-val emk-good">451 → 287</span><span class="emk-note">−36%</span></div>
+        <div class="emk"><span class="emk-label">Tiempo/parada medio</span><span class="emk-val emk-good">5,7 min → 4,5 min</span><span class="emk-note">−21%</span></div>
+        <div class="emk"><span class="emk-label">Rutas optimizadas hoy</span><span class="emk-val emk-good">3 / 4</span><span class="emk-note">DR0023 fuera de rango</span></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══ PANEL: RESUMEN ══ -->
+<div id="resumen" class="panel">
+  <div class="sec">Distribución por ruta</div>
+  <div class="chart-wrap">
+    <canvas id="cRutas" height="160" role="img" aria-label="Paradas y unidades por ruta"></canvas>
+  </div>
+  <div class="legend">
+    <span class="leg-item"><span class="leg-dot" style="background:#C8102E"></span>DR0006 — J.Vélez Castro</span>
+    <span class="leg-item"><span class="leg-dot" style="background:#1A7A5A"></span>DR0010 — A.Díaz Águila</span>
+    <span class="leg-item"><span class="leg-dot" style="background:#E8B84B"></span>DR0017 — repartidor 17</span>
+    <span class="leg-item"><span class="leg-dot" style="background:#7A766F"></span>DR0023 — repartidor 23</span>
+  </div>
+
+  <div class="grid2">
+    <div>
+      <div class="sec">Composición de carga</div>
+      <div class="chart-wrap">
+        <canvas id="cCompo" height="180" role="img" aria-label="Composición de carga"></canvas>
+      </div>
+    </div>
+    <div>
+      <div class="sec">Top 10 clientes por volumen</div>
+      <div class="chart-wrap">
+        <canvas id="cTop10" height="180" role="img" aria-label="Top clientes"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ PANEL: PARADAS ══ -->
+<div id="paradas" class="panel">
+  <div id="rutaBlocks"></div>
+</div>
+
+<!-- ══ PANEL: CAMIÓN / PALÉS ══ -->
+<div id="camion" class="panel">
+  <div class="truck-ctrl">
+    <label>Vehículo:</label>
+    <select id="selVehicle" onchange="updateVehicleForRoute();renderTruck()">
+      <option value="big">🚛 Camión grande (6 palés)</option>
+      <option value="med">🚚 Camión mediano (8 palés)</option>
+      <option value="van">🚐 Furgoneta (3 palés)</option>
+    </select>
+    <label>Ruta:</label>
+    <select id="selRuta" onchange="renderTruck()">
+      <option value="DR0006">DR0006 — J.Vélez · 17 paradas · 8 barriles</option>
+      <option value="DR0010">DR0010 — A.Díaz · 17 paradas · 1 barril</option>
+      <option value="DR0017">DR0017 — Rep17 · 25 paradas · 7 barriles</option>
+    </select>
+    <label>Estrategia:</label>
+    <select id="selStrat" onchange="renderTruck()">
+      <option value="sku">Modelo A — SKU-based (actual)</option>
+      <option value="hybrid">Modelo Híbrido (recomendado)</option>
+    </select>
+    <label>Momento:</label>
+    <select id="selMom" onchange="renderTruck()">
+      <option value="start">Salida almacén</option>
+      <option value="mid">Mitad ruta</option>
+      <option value="end">Última parada</option>
+    </select>
+  </div>
+  <div class="legend">
+    <span class="leg-item"><span class="leg-dot" style="background:#B5D4F4"></span>Cervezas</span>
+    <span class="leg-item"><span class="leg-dot" style="background:#FAC775"></span>Retornables vacíos</span>
+    <span class="leg-item"><span class="leg-dot" style="background:#F5C4B3"></span>Barriles</span>
+    <span class="leg-item"><span class="leg-dot" style="background:#9FE1CB"></span>Agua/bebidas</span>
+    <span class="leg-item"><span class="leg-dot" style="background:#C0DD97"></span>Otros</span>
+  </div>
+  <div class="truck-diagram">
+    <div class="truck-label-bar">
+      <span class="tl-left" id="truckDiagramLabel">Camión grande · 6 palés · acceso lateral →</span>
+      <span class="access-tag">ACCESO LATERAL</span>
+    </div>
+    <div class="pallets-grid" id="palletsGrid"></div>
+    <div class="truck-access-bar">
+      <span class="ac-label">← FONDO</span>
+      <span class="ac-line"></span>
+      <span class="ac-arrow">→</span>
+      <span class="ac-label">PUERTA LATERAL</span>
+    </div>
+  </div>
+  <div class="truck-info" id="truckInfo"></div>
+</div>
+
+<!-- ══ PANEL: COMPARATIVA ══ -->
+<div id="comparativa" class="panel">
+  <div class="sec">Métricas comparadas — día 11/02/2026 Mollet</div>
+  <table class="cmp-table">
+    <thead><tr><th>Métrica</th><th>Modelo A — SKU-based</th><th>Modelo Híbrido</th><th>Diferencia</th></tr></thead>
+    <tbody id="cmpBody"></tbody>
+  </table>
+
+  <div class="grid2 mt8">
+    <div class="chart-wrap">
+      <div class="chart-title">Tiempo descarga · Movimientos · Friction</div>
+      <div style="position:relative;height:200px">
+        <canvas id="cCmp" role="img" aria-label="Comparativa modelos"></canvas>
+      </div>
+    </div>
+    <div class="chart-wrap">
+      <div class="chart-title">Friction Score por ruta</div>
+      <div style="position:relative;height:200px">
+        <canvas id="cFric" role="img" aria-label="Friction por ruta"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="savings-box">
+    ✅ <strong>Ahorro estimado con modelo híbrido:</strong> −72 minutos/día en Mollet (de 5,8 h → 4,6 h).
+    Incremento coste almacén: +8–12% en tiempo de preparación.
+    Beneficio neto: <strong>+58 min recuperados</strong> por jornada.
+  </div>
+</div>
+
+<!-- ══ PANEL: DECISIÓN ══ -->
+<div id="decision" class="panel">
+  <div class="sec">Marco de decisión — regla de asignación por parada</div>
+  <div class="rules-grid">
+    <div class="rule-card">
+      <div class="rtitle">SKU-based puro</div>
+      <div class="rbody">Parada ≤5 uds · 1–2 SKUs únicos · Sin barril · Zona con ≥8 clientes similares<br><em style="color:#BDBAB3">Ej: PAQUI FORN PA (2 uds), CTRO.ELS TIL.LERS (4 uds)</em></div>
+    </div>
+    <div class="rule-card hl">
+      <div class="rtitle">Híbrido <span class="rdrec">recomendado</span></div>
+      <div class="rbody">Parada 6–50 uds · 3–10 SKUs · Posible barril · Ruta urbana densa<br><em style="color:#6A9E8A">Ej: BAR GRANADA (12u), LA GRANJA (40u), FUSSION (44u)</em></div>
+    </div>
+    <div class="rule-card">
+      <div class="rtitle">Cliente-aware total</div>
+      <div class="rbody">Parada &gt;50 uds · &gt;10 SKUs + barril · Acceso complicado<br><em style="color:#BDBAB3">Ej: ZAMORA BAR (57u), FRANKFURT (70u), RTE.TA HAO MEN (54u)</em></div>
+    </div>
+  </div>
+
+  <div class="sec">Asignación física de palés por tipo de vehículo</div>
+  <div class="phys-grid">
+    <div class="phys-card">
+      <h4>Reglas de posicionamiento en palés</h4>
+      <div>
+        <strong>Palés fondo (1–2)</strong> → últimas entregas. Carga densa, acceso profundo tolerable.<br>
+        <strong>Palés centro</strong> → entregas intermedias. Mezcla de familias por cliente.<br>
+        <strong>Palés puerta (último/s)</strong> → primeras entregas. Barriles siempre aquí. Clientes ≥40 uds con palé exclusivo.
+      </div>
+    </div>
+    <div class="phys-card">
+      <h4>Capacidad máxima por vehículo</h4>
+      <div>
+        <strong>🚛 Camión grande (6 palés):</strong> max ~120 uds/palé · 11 unidades<br>
+        <strong>🚚 Camión mediano (8 palés):</strong> max ~90 uds/palé · 4 unidades<br>
+        <strong>🚐 Furgoneta (3 palés):</strong> max ~60 uds/palé · 1 unidad<br><br>
+        Barriles: máx. 2 apilados · palé lateral de acceso rápido<br>
+        Retornables: reservar palé fondo para logística inversa
+      </div>
+    </div>
+  </div>
+
+  <div class="sec">Función objetivo — coste total del día</div>
+  <div class="formula-box">
+    Total_Cost = T_ruta + Σ(T_descarga_i) + Friction × 0.8 + Interference × 0.6 + Cost_almacén<br>
+    <span class="fm-a">Modelo A:&nbsp;&nbsp;</span>348 min + 312 mov + 74×0.8 + 79×0.6 + 0 = <span class="fm-val-a">451 puntos</span><br>
+    <span class="fm-h">Híbrido:&nbsp;&nbsp;&nbsp;</span>276 min + 183 mov + 29×0.8 + 26×0.6 + 28 = <span class="fm-val-h">287 puntos (−36%)</span>
+  </div>
+</div>
+
+</div><!-- /shell -->
+
+<script>
+// ── DATA ──
+const STOPS = [{"id":"827991854","client":"FRANKFURT MOLLET SL","ruta":"DR0006","units":70,"skus":11,"barrel":true,"barrel_u":4,"beer_u":24,"water_u":8,"empty_u":24,"other_u":10},{"id":"827991844","client":"FUSSION","ruta":"DR0006","units":44,"skus":15,"barrel":true,"barrel_u":6,"beer_u":15,"water_u":5,"empty_u":15,"other_u":3},{"id":"827991847","client":"BAR KARAI","ruta":"DR0006","units":34,"skus":8,"barrel":true,"barrel_u":2,"beer_u":12,"water_u":0,"empty_u":12,"other_u":8},{"id":"827991857","client":"CANTINA RENFE SANT FOST","ruta":"DR0006","units":29,"skus":9,"barrel":true,"barrel_u":2,"beer_u":12,"water_u":3,"empty_u":12,"other_u":0},{"id":"827991859","client":"XURRERIA","ruta":"DR0006","units":29,"skus":13,"barrel":true,"barrel_u":4,"beer_u":7,"water_u":6,"empty_u":9,"other_u":3},{"id":"827991850","client":"RECO DE LAURA","ruta":"DR0006","units":24,"skus":3,"barrel":false,"barrel_u":0,"beer_u":12,"water_u":0,"empty_u":12,"other_u":0},{"id":"827991868","client":"LA TASCA BAR","ruta":"DR0006","units":21,"skus":9,"barrel":true,"barrel_u":6,"beer_u":5,"water_u":3,"empty_u":5,"other_u":2},{"id":"827991856","client":"LA BODEGUETA DE MOLLET","ruta":"DR0006","units":20,"skus":8,"barrel":true,"barrel_u":8,"beer_u":10,"water_u":0,"empty_u":10,"other_u":0},{"id":"827991863","client":"EL GARBI BAR","ruta":"DR0006","units":20,"skus":15,"barrel":false,"barrel_u":0,"beer_u":4,"water_u":2,"empty_u":4,"other_u":10},{"id":"841037176","client":"VENECIA BAR","ruta":"DR0006","units":20,"skus":1,"barrel":false,"barrel_u":0,"beer_u":0,"water_u":0,"empty_u":20,"other_u":0},{"id":"827991852","client":"BAR GRANADA","ruta":"DR0006","units":12,"skus":4,"barrel":false,"barrel_u":0,"beer_u":0,"water_u":0,"empty_u":6,"other_u":6},{"id":"827991846","client":"PITAPES BERENGUER","ruta":"DR0006","units":10,"skus":2,"barrel":true,"barrel_u":10,"beer_u":5,"water_u":0,"empty_u":5,"other_u":0},{"id":"827991866","client":"EL GARBI BAR","ruta":"DR0006","units":10,"skus":1,"barrel":false,"barrel_u":0,"beer_u":0,"water_u":0,"empty_u":0,"other_u":10},{"id":"827991845","client":"CAL TAPA GASTROBAR","ruta":"DR0006","units":8,"skus":3,"barrel":false,"barrel_u":0,"beer_u":0,"water_u":0,"empty_u":4,"other_u":4},{"id":"827991870","client":"VENECIA BAR","ruta":"DR0006","units":6,"skus":5,"barrel":false,"barrel_u":0,"beer_u":0,"water_u":0,"empty_u":1,"other_u":5},{"id":"827991848","client":"BAR KARAI","ruta":"DR0006","units":2,"skus":1,"barrel":false,"barrel_u":0,"beer_u":0,"water_u":2,"empty_u":0,"other_u":0},{"id":"827991849","client":"BAR KARAI","ruta":"DR0006","units":2,"skus":2,"barrel":false,"barrel_u":0,"beer_u":0,"water_u":1,"empty_u":1,"other_u":0},{"id":"827992156","client":"RTE CHINO TA HAO MEN","ruta":"DR0010","units":54,"skus":11,"barrel":false,"barrel_u":0,"beer_u":14,"water_u":11,"empty_u":25,"other_u":4},{"id":"827992145","client":"HOLA K TAL","ruta":"DR0010","units":51,"skus":12,"barrel":false,"barrel_u":0,"beer_u":10,"water_u":3,"empty_u":12,"other_u":26},{"id":"827992155","client":"LA PINYA BAR","ruta":"DR0010","units":44,"skus":10,"barrel":true,"barrel_u":4,"beer_u":15,"water_u":6,"empty_u":15,"other_u":4},{"id":"827992148","client":"ALHAMBRA 57","ruta":"DR0010","units":43,"skus":8,"barrel":false,"barrel_u":0,"beer_u":16,"water_u":0,"empty_u":16,"other_u":11},{"id":"827992150","client":"LA GRANJA","ruta":"DR0010","units":40,"skus":8,"barrel":false,"barrel_u":0,"beer_u":16,"water_u":0,"empty_u":16,"other_u":8},{"id":"827992146","client":"Bar Castillo","ruta":"DR0010","units":34,"skus":5,"barrel":false,"barrel_u":0,"beer_u":17,"water_u":0,"empty_u":17,"other_u":0},{"id":"827992147","client":"BAR NIKOL","ruta":"DR0010","units":16,"skus":5,"barrel":false,"barrel_u":0,"beer_u":8,"water_u":0,"empty_u":8,"other_u":0},{"id":"827992158","client":"BRACAFE","ruta":"DR0010","units":16,"skus":14,"barrel":false,"barrel_u":0,"beer_u":3,"water_u":4,"empty_u":5,"other_u":4},{"id":"827992160","client":"Bar El Parque","ruta":"DR0010","units":16,"skus":6,"barrel":false,"barrel_u":0,"beer_u":6,"water_u":0,"empty_u":6,"other_u":4},{"id":"827992144","client":"EVA RESTAURANT","ruta":"DR0010","units":15,"skus":6,"barrel":false,"barrel_u":0,"beer_u":7,"water_u":0,"empty_u":7,"other_u":1},{"id":"827992149","client":"EXTREMEÑOS BAR","ruta":"DR0010","units":14,"skus":4,"barrel":false,"barrel_u":0,"beer_u":7,"water_u":0,"empty_u":7,"other_u":0},{"id":"827992151","client":"BAR LOS CAZADORES","ruta":"DR0010","units":8,"skus":3,"barrel":false,"barrel_u":0,"beer_u":4,"water_u":0,"empty_u":4,"other_u":0},{"id":"827992152","client":"LA BELLA CALABRIA","ruta":"DR0010","units":8,"skus":5,"barrel":false,"barrel_u":0,"beer_u":4,"water_u":0,"empty_u":4,"other_u":0},{"id":"827992159","client":"PARAISO BAR","ruta":"DR0010","units":8,"skus":2,"barrel":false,"barrel_u":0,"beer_u":4,"water_u":0,"empty_u":4,"other_u":0},{"id":"827992153","client":"LA BELLA CALABRIA","ruta":"DR0010","units":4,"skus":2,"barrel":false,"barrel_u":0,"beer_u":2,"water_u":0,"empty_u":2,"other_u":0},{"id":"827992157","client":"RTE CHINO TA HAO MEN","ruta":"DR0010","units":4,"skus":3,"barrel":false,"barrel_u":0,"beer_u":2,"water_u":0,"empty_u":2,"other_u":0},{"id":"827992154","client":"PAQUI FORN DE PA","ruta":"DR0010","units":2,"skus":2,"barrel":false,"barrel_u":0,"beer_u":0,"water_u":0,"empty_u":0,"other_u":2},{"id":"827991973","client":"ZAMORA BAR","ruta":"DR0017","units":57,"skus":5,"barrel":false,"barrel_u":0,"beer_u":27,"water_u":0,"empty_u":27,"other_u":3},{"id":"827991971","client":"BAR CAN BORRELL","ruta":"DR0017","units":55,"skus":7,"barrel":false,"barrel_u":0,"beer_u":21,"water_u":0,"empty_u":21,"other_u":13},{"id":"827991964","client":"TREBOL CERVECERIA","ruta":"DR0017","units":49,"skus":8,"barrel":true,"barrel_u":2,"beer_u":22,"water_u":0,"empty_u":24,"other_u":1},{"id":"827991960","client":"Bar la Cantonada","ruta":"DR0017","units":44,"skus":7,"barrel":false,"barrel_u":0,"beer_u":22,"water_u":0,"empty_u":22,"other_u":0},{"id":"827991966","client":"Bar restaurante Nacha","ruta":"DR0017","units":44,"skus":8,"barrel":false,"barrel_u":0,"beer_u":13,"water_u":0,"empty_u":13,"other_u":18},{"id":"827991977","client":"HOMER BAR GRANJA","ruta":"DR0017","units":44,"skus":10,"barrel":true,"barrel_u":4,"beer_u":13,"water_u":0,"empty_u":13,"other_u":14},{"id":"827991957","client":"Molletveer","ruta":"DR0017","units":38,"skus":7,"barrel":false,"barrel_u":0,"beer_u":18,"water_u":0,"empty_u":18,"other_u":2},{"id":"827991972","client":"NOU CAPRICCIO","ruta":"DR0017","units":38,"skus":11,"barrel":true,"barrel_u":8,"beer_u":6,"water_u":4,"empty_u":10,"other_u":10},{"id":"827991975","client":"RIVOLI CERVECERIA","ruta":"DR0017","units":28,"skus":6,"barrel":false,"barrel_u":0,"beer_u":11,"water_u":0,"empty_u":13,"other_u":4},{"id":"827991965","client":"NOVA PALMERA","ruta":"DR0017","units":26,"skus":5,"barrel":false,"barrel_u":0,"beer_u":11,"water_u":0,"empty_u":11,"other_u":4},{"id":"827991958","client":"BAR ESPERANZA","ruta":"DR0017","units":22,"skus":2,"barrel":false,"barrel_u":0,"beer_u":11,"water_u":0,"empty_u":11,"other_u":0},{"id":"827991969","client":"BAR LA BONA SORT","ruta":"DR0017","units":22,"skus":2,"barrel":false,"barrel_u":0,"beer_u":11,"water_u":0,"empty_u":11,"other_u":0},{"id":"841037182","client":"XARRUP BAR","ruta":"DR0017","units":20,"skus":1,"barrel":false,"barrel_u":0,"beer_u":0,"water_u":0,"empty_u":20,"other_u":0},{"id":"827991970","client":"CERVESERIA CIUTAT","ruta":"DR0017","units":14,"skus":3,"barrel":false,"barrel_u":0,"beer_u":0,"water_u":0,"empty_u":2,"other_u":12},{"id":"827989955","client":"U.D. MOLLETENSE","ruta":"DR0017","units":11,"skus":3,"barrel":true,"barrel_u":10,"beer_u":5,"water_u":0,"empty_u":5,"other_u":0},{"id":"827991976","client":"XARRUP BAR","ruta":"DR0017","units":10,"skus":4,"barrel":false,"barrel_u":0,"beer_u":1,"water_u":0,"empty_u":5,"other_u":4},{"id":"827991962","client":"CASA MAURA","ruta":"DR0017","units":7,"skus":6,"barrel":true,"barrel_u":2,"beer_u":1,"water_u":1,"empty_u":2,"other_u":1},{"id":"827991967","client":"BAR DE TAPES","ruta":"DR0017","units":7,"skus":4,"barrel":true,"barrel_u":2,"beer_u":1,"water_u":0,"empty_u":1,"other_u":3},{"id":"827991968","client":"CACHITO PAN","ruta":"DR0017","units":7,"skus":4,"barrel":true,"barrel_u":2,"beer_u":1,"water_u":2,"empty_u":1,"other_u":1},{"id":"841037181","client":"BAR DE TAPES","ruta":"DR0017","units":7,"skus":1,"barrel":false,"barrel_u":0,"beer_u":0,"water_u":0,"empty_u":7,"other_u":0},{"id":"827991959","client":"SOL Y LUNA","ruta":"DR0017","units":6,"skus":6,"barrel":false,"barrel_u":0,"beer_u":0,"water_u":0,"empty_u":1,"other_u":5},{"id":"827991963","client":"CASA MAURA","ruta":"DR0017","units":6,"skus":3,"barrel":false,"barrel_u":0,"beer_u":3,"water_u":0,"empty_u":3,"other_u":0},{"id":"827991974","client":"FORN DE PA EMY","ruta":"DR0017","units":4,"skus":4,"barrel":false,"barrel_u":0,"beer_u":0,"water_u":0,"empty_u":1,"other_u":3},{"id":"827991961","client":"CASA MAURA","ruta":"DR0017","units":3,"skus":2,"barrel":false,"barrel_u":0,"beer_u":0,"water_u":0,"empty_u":0,"other_u":3},{"id":"827989956","client":"U.D. MOLLETENSE","ruta":"DR0017","units":2,"skus":2,"barrel":false,"barrel_u":0,"beer_u":2,"water_u":0,"empty_u":0,"other_u":0},{"id":"827991992","client":"DISTRIBUIDORA PROD. NAT.","ruta":"DR0023","units":19,"skus":3,"barrel":false,"barrel_u":0,"beer_u":0,"water_u":15,"empty_u":0,"other_u":4},{"id":"827991994","client":"CTRO.ELS TIL.LERS","ruta":"DR0023","units":4,"skus":2,"barrel":false,"barrel_u":0,"beer_u":0,"water_u":0,"empty_u":0,"other_u":4}];
+
+const RUTA_COLORS={DR0006:'#C8102E',DR0010:'#1A7A5A',DR0017:'#BA7517',DR0023:'#7A766F'};
+const COL_BEER='#B5D4F4',COL_EMPTY='#FAC775',COL_BARREL='#F5C4B3',COL_WATER='#9FE1CB',COL_OTHER='#C0DD97';
+
+// Fleet config: pallet counts per vehicle type
+const FLEET={big:{pallets:6,label:'Camión grande',cap:120},med:{pallets:8,label:'Camión mediano',cap:90},van:{pallets:3,label:'Furgoneta',cap:60}};
+// Route → default vehicle assignment (based on load volume)
+const ROUTE_VEHICLE={DR0006:'big',DR0010:'big',DR0017:'med',DR0023:'van'};
+
+function frictionScore(s){let f=0;if(s.barrel)f+=20;if(s.skus>8)f+=15;if(s.units>40)f+=10;f+=Math.min(20,s.skus*2);f+=Math.min(15,s.units*0.2);return Math.min(99,Math.round(f));}
+function frictionHybrid(s){let f=0;if(s.barrel)f+=8;if(s.skus>8)f+=5;if(s.units>40)f+=3;f+=Math.min(8,s.skus*0.8);f+=Math.min(6,s.units*0.08);return Math.min(40,Math.round(f));}
+
+function show(id){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelector(`[onclick="show('${id}')"]`).classList.add('active');
+  document.getElementById(id).classList.add('active');
+  if(id==='camion') renderTruck();
+  if(id==='comparativa') renderCmp();
+  if(id==='ejecutivo') renderExec();
+}
+
+let execDrawn=false;
+function renderExec(){
+  if(execDrawn) return; execDrawn=true;
+  new Chart(document.getElementById('cExecScore'),{
+    type:'bar',
+    data:{
+      labels:['Modelo A\n(SKU-based)','Modelo\nHíbrido'],
+      datasets:[
+        {label:'T_ruta',data:[348,276],backgroundColor:'#C8102E',borderRadius:4},
+        {label:'Movimientos',data:[88,52],backgroundColor:'#E8B84B',borderRadius:4},
+        {label:'Friction×0.8',data:[59,23],backgroundColor:'#C85A1A',borderRadius:4},
+        {label:'Interference×0.6',data:[47,16],backgroundColor:'#888',borderRadius:4},
+        {label:'Coste almacén',data:[0,28],backgroundColor:'#1A4A8C',borderRadius:4},
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'bottom',labels:{boxWidth:10,font:{size:10}}},
+        tooltip:{callbacks:{footer:function(items){
+          const total=items.reduce((a,i)=>a+i.parsed.y,0);
+          return 'Total: '+total+' puntos';
+        }}}
+      },
+      scales:{x:{stacked:true,ticks:{maxRotation:0},grid:{display:false}},y:{stacked:true,beginAtZero:true,grid:{color:'#EAE7E0'},title:{display:true,text:'Puntos de coste'}}}
+    }
+  });
+}
+renderExec();
+
+// ── CHARTS ──
+const chartDefaults={font:{family:'DM Sans, sans-serif',size:11},color:'#7A766F'};
+Chart.defaults.font.family=chartDefaults.font.family;
+Chart.defaults.font.size=chartDefaults.font.size;
+Chart.defaults.color=chartDefaults.color;
+
+new Chart(document.getElementById('cRutas'),{
+  type:'bar',
+  data:{
+    labels:['DR0006','DR0010','DR0017','DR0023'],
+    datasets:[
+      {label:'Paradas',data:[17,17,25,2],backgroundColor:['#C8102E','#1A7A5A','#BA7517','#7A766F'],yAxisID:'y',borderRadius:4},
+      {label:'Unidades',data:[361,377,571,23],backgroundColor:['rgba(200,16,46,.18)','rgba(26,122,90,.18)','rgba(186,117,23,.18)','rgba(122,118,111,.18)'],yAxisID:'y1',borderRadius:4},
+    ]
+  },
+  options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,grid:{color:'#EAE7E0'},title:{display:true,text:'Paradas'}},y1:{beginAtZero:true,position:'right',grid:{drawOnChartArea:false},title:{display:true,text:'Unidades'}}}}
+});
+
+const totBeer=STOPS.reduce((a,s)=>a+s.beer_u,0);
+const totEmpty=STOPS.reduce((a,s)=>a+s.empty_u,0);
+const totWater=STOPS.reduce((a,s)=>a+s.water_u,0);
+const totBarrel=STOPS.reduce((a,s)=>a+s.barrel_u,0);
+const totOther=STOPS.reduce((a,s)=>a+s.other_u,0);
+new Chart(document.getElementById('cCompo'),{
+  type:'doughnut',
+  data:{labels:['Cervezas ret.','Retorn. vacíos','Agua/bebidas','Barriles','Otros'],datasets:[{data:[totBeer,totEmpty,totWater,totBarrel,totOther],backgroundColor:['#C8102E','#FAC775','#5DCAA5','#D85A30','#7A766F'],borderWidth:2,borderColor:'#F5F3EF'}]},
+  options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:10,padding:8}}}}
+});
+
+const top10=[...STOPS].sort((a,b)=>b.units-a.units).slice(0,10);
+new Chart(document.getElementById('cTop10'),{
+  type:'bar',
+  data:{
+    labels:top10.map(s=>s.client.length>16?s.client.slice(0,16)+'…':s.client),
+    datasets:[{label:'Unidades',data:top10.map(s=>s.units),backgroundColor:top10.map(s=>RUTA_COLORS[s.ruta]||'#7A766F'),borderRadius:3}]
+  },
+  options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,grid:{color:'#EAE7E0'}}}}
+});
+
+// ── PARADAS ──
+function buildParadas(){
+  const rutas=['DR0006','DR0010','DR0017','DR0023'];
+  const cont=document.getElementById('rutaBlocks');
+  rutas.forEach(r=>{
+    const stops=STOPS.filter(s=>s.ruta===r).sort((a,b)=>b.units-a.units);
+    if(!stops.length) return;
+    const barrels=stops.filter(s=>s.barrel).length;
+    const totalU=stops.reduce((a,s)=>a+s.units,0);
+    const div=document.createElement('div');
+    div.innerHTML=`
+      <div class="ruta-hdr" onclick="toggleRuta('${r}',this)">
+        <span class="rtag" style="background:${RUTA_COLORS[r]}18;color:${RUTA_COLORS[r]}">${r}</span>
+        <span style="font-size:13px;font-weight:600">${stops.length} paradas · ${totalU} uds</span>
+        <span class="rinfo">${barrels} barriles</span>
+        <span class="rarrow">▶</span>
+      </div>
+      <div class="stops-list" id="list-${r}">
+        <div class="stop-hd"><span>Cliente</span><span style="text-align:right">Uds</span><span style="text-align:right">SKUs</span><span style="text-align:center">Barril</span><span style="text-align:center">Fricción A</span></div>
+        ${stops.map(s=>{
+          const fr=frictionScore(s);
+          const fpCls=fr>=60?'fp-hi':fr>=30?'fp-mid':'fp-low';
+          return `<div class="stop-row">
+            <span class="cname">${s.client}</span>
+            <span class="cunits">${s.units}</span>
+            <span class="cskus">${s.skus}</span>
+            <span style="text-align:center">${s.barrel?'<span class="bpill">BRL</span>':'—'}</span>
+            <span style="text-align:center"><span class="fpill ${fpCls}">${fr}</span></span>
+          </div>`;
+        }).join('')}
+      </div>`;
+    cont.appendChild(div);
+  });
+}
+function toggleRuta(r,hdr){
+  const list=document.getElementById('list-'+r);
+  const open=list.classList.toggle('open');
+  hdr.classList.toggle('open',open);
+}
+buildParadas();
+
+// ── TRUCK / PALLET RENDERER ──
+function updateVehicleForRoute(){
+  // auto-suggest vehicle based on route but allow override
+}
+
+function renderTruck(){
+  const ruta=document.getElementById('selRuta').value;
+  const strat=document.getElementById('selStrat').value;
+  const mom=document.getElementById('selMom').value;
+  const vType=document.getElementById('selVehicle').value;
+  const vCfg=FLEET[vType];
+  const nPallets=vCfg.pallets;
+  const maxPerPallet=vCfg.cap;
+
+  let stops=STOPS.filter(s=>s.ruta===ruta).sort((a,b)=>b.units-a.units);
+  if(mom==='mid') stops=stops.slice(Math.floor(stops.length/2));
+  if(mom==='end') stops=stops.slice(-3);
+
+  // Build pallet data: array of nPallets, each with items[]
+  const pallets=Array.from({length:nPallets},()=>({items:[],totalUnits:0}));
+
+  // Zone labels: fondo=rear, puerta=front
+  const zoneLabels=pallets.map((_,i)=>{
+    if(i===0) return{label:'FONDO',cls:'z-rear'};
+    if(i===nPallets-1) return{label:'PUERTA',cls:'z-front'};
+    if(i===nPallets-2&&nPallets>4) return{label:'ACCESO',cls:'z-front'};
+    return{label:'CENTRO',cls:'z-mid'};
+  });
+  // Position names: Palé 1 (fondo) → Palé N (puerta)
+  const palNames=pallets.map((_,i)=>`Palé ${i+1}`);
+
+  if(strat==='sku'){
+    let beer=0,empty=0,barrel=0,water=0,other=0;
+    stops.forEach(s=>{beer+=s.beer_u;empty+=s.empty_u;barrel+=s.barrel_u;water+=s.water_u;other+=s.other_u;});
+    const sku_dist=[
+      {label:'Cervezas ED/VO',qty:beer,color:COL_BEER},
+      {label:'Retornables vacíos',qty:empty,color:COL_EMPTY},
+      {label:'Barriles 30L',qty:barrel,color:COL_BARREL,skip:barrel===0},
+      {label:'Agua/bebidas',qty:water,color:COL_WATER,skip:water===0},
+      {label:'Otros',qty:other,color:COL_OTHER},
+    ].filter(x=>!x.skip);
+    // Spread SKUs across pallets evenly
+    let pi=0;
+    sku_dist.forEach(item=>{
+      pallets[pi%nPallets].items.push(item);
+      pallets[pi%nPallets].totalUnits+=item.qty;
+      pi++;
+    });
+    stops.slice(0,Math.min(nPallets,3)).forEach((s,i)=>{
+      pallets[i].items.push({label:s.client.slice(0,15),qty:s.units,color:'#D3D1C7'});
+    });
+  } else {
+    // Hybrid: big/barrel clients get dedicated pallets near door, smalls share rear
+    const big=stops.filter(s=>s.units>=20||s.barrel);
+    const small=stops.filter(s=>s.units<20&&!s.barrel);
+    // Barriles → last pallet (puerta)
+    const barrelStops=stops.filter(s=>s.barrel);
+    let pIdx=nPallets-1; // start from door
+    barrelStops.slice(0,2).forEach(s=>{
+      const p=pallets[pIdx];
+      p.items.push({label:'▸ '+s.client.slice(0,13),qty:null,isHeader:true});
+      if(s.barrel_u>0) p.items.push({label:'Barriles ×'+s.barrel_u,qty:s.barrel_u,color:COL_BARREL});
+      if(s.beer_u>0) p.items.push({label:'Cervezas ×'+s.beer_u,qty:s.beer_u,color:COL_BEER});
+      p.totalUnits+=s.units;
+    });
+    // Big clients → next pallets inward
+    pIdx=nPallets-2;
+    big.filter(s=>!s.barrel).slice(0,Math.min(nPallets-2,3)).forEach(s=>{
+      if(pIdx<0) return;
+      const p=pallets[pIdx];
+      p.items.push({label:'▸ '+s.client.slice(0,13),qty:null,isHeader:true});
+      if(s.beer_u>0) p.items.push({label:'Cervezas ×'+s.beer_u,qty:s.beer_u,color:COL_BEER});
+      if(s.empty_u>0) p.items.push({label:'Vacíos ×'+s.empty_u,qty:s.empty_u,color:COL_EMPTY});
+      if(s.water_u>0) p.items.push({label:'Agua ×'+s.water_u,qty:s.water_u,color:COL_WATER});
+      p.totalUnits+=s.units;
+      pIdx--;
+    });
+    // Small clients → fondo pallets
+    small.slice(0,8).forEach((s,i)=>{
+      const p=pallets[Math.min(Math.floor(i/3),1)];
+      p.items.push({label:s.client.slice(0,13)+' ('+s.units+'u)',qty:s.units,color:COL_OTHER});
+      p.totalUnits+=s.units;
+    });
+    // Retornables zone → pallet 0 (fondo)
+    pallets[0].items.unshift({label:'Zona retornables',qty:null,isHeader:true});
+  }
+
+  // Render
+  document.getElementById('truckDiagramLabel').textContent=`${vCfg.label} · ${nPallets} palés · acceso lateral →`;
+  const grid=document.getElementById('palletsGrid');
+  grid.innerHTML=pallets.map((p,i)=>{
+    const pct=Math.round(Math.min(100,p.totalUnits/maxPerPallet*100));
+    const zone=zoneLabels[i];
+    const posClass=i===nPallets-1||i===nPallets-2?'pos-front':i===0?'pos-rear':'';
+    return `<div class="pallet-col">
+      <div class="pallet-num">${palNames[i]}</div>
+      <div class="pallet ${posClass} ${p.items.length?'active':''}">
+        <div class="pallet-zone ${zone.cls}">${zone.label}</div>
+        ${p.items.slice(0,6).map(x=>x.isHeader
+          ?`<div class="pitem pi-header">${x.label}</div>`
+          :`<div class="pitem" style="background:${x.color};color:#2C2C2A"><span class="pi-name">${x.label}</span>${x.qty!=null?`<span class="pi-qty">${x.qty} ud</span>`:''}</div>`
+        ).join('')}
+        ${p.items.length===0?'<div class="pallet-empty">vacío</div>':''}
+        <div class="pallet-pct">${pct}% ocupado</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  const frA=stops.reduce((a,s)=>a+frictionScore(s),0);
+  const frH=stops.reduce((a,s)=>a+frictionHybrid(s),0);
+  const barrels=stops.filter(s=>s.barrel).length;
+  const totalU=stops.reduce((a,s)=>a+s.units,0);
+  document.getElementById('truckInfo').innerHTML=`
+    <strong>${stops.length} paradas pendientes</strong> · ${totalU} uds · ${barrels} barriles ·
+    Friction total ${strat==='sku'?'<span class="bad">'+frA+'</span>':'<span class="good">'+frH+'</span>'} ·
+    ${strat==='sku'
+      ?`<span class="bad">Modelo A: conductor reorganizará manualmente en ~${Math.ceil(stops.length*0.6)} paradas</span>`
+      :`<span class="good">Modelo Híbrido: acceso directo estimado en ~${Math.ceil(stops.length*0.85)} paradas sin reorganización</span>`}
+    · <strong>Vehículo:</strong> ${vCfg.label} (${nPallets} palés)`;
+}
+
+// ── COMPARATIVA ──
+let cmpDrawn=false;
+function renderCmp(){
+  if(cmpDrawn) return; cmpDrawn=true;
+  const rows=[
+    ['Tiempo descarga total (min)','348','276','-72 min','good'],
+    ['Movimientos extra estimados','312','183','-41%','good'],
+    ['Friction Score global','74','29','-61%','good'],
+    ['Interference Score global','79','26','-67%','good'],
+    ['Paradas con barril problemático','16','16','igual (física)',''],
+    ['Coste prep. almacén (min)','0','+28','+8–12%','warn'],
+    ['Beneficio neto (min)','0','+44','+44 min','good'],
+  ];
+  document.getElementById('cmpBody').innerHTML=rows.map(r=>`<tr>
+    <td>${r[0]}</td>
+    <td class="${r[0].includes('Coste')?'':'bad'}">${r[1]}</td>
+    <td class="${r[4]==='good'?'good':r[4]==='warn'?'warn':''}">${r[2]}</td>
+    <td class="${r[4]==='good'?'good':r[4]==='warn'?'warn':''}">${r[3]}</td>
+  </tr>`).join('');
+
+  new Chart(document.getElementById('cCmp'),{
+    type:'bar',
+    data:{
+      labels:['Tiempo\ndescarga','Movimientos\nextra','Friction\nScore','Interference\nScore'],
+      datasets:[
+        {label:'Modelo A',data:[348,312,74,79],backgroundColor:'#C8102E',borderRadius:4},
+        {label:'Modelo Híbrido',data:[276,183,29,26],backgroundColor:'#1A7A5A',borderRadius:4},
+      ]
+    },
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:10}}},scales:{x:{ticks:{maxRotation:0},grid:{color:'#EAE7E0'}},y:{beginAtZero:true,grid:{color:'#EAE7E0'}}}}
+  });
+
+  const rutas=['DR0006','DR0010','DR0017'];
+  const frA=rutas.map(r=>STOPS.filter(s=>s.ruta===r).reduce((a,s)=>a+frictionScore(s),0));
+  const frH=rutas.map(r=>STOPS.filter(s=>s.ruta===r).reduce((a,s)=>a+frictionHybrid(s),0));
+  new Chart(document.getElementById('cFric'),{
+    type:'bar',
+    data:{
+      labels:rutas,
+      datasets:[
+        {label:'Friction A',data:frA,backgroundColor:'rgba(200,16,46,.8)',borderRadius:4},
+        {label:'Friction Híbrido',data:frH,backgroundColor:'rgba(26,122,90,.8)',borderRadius:4},
+      ]
+    },
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:10}}},scales:{y:{beginAtZero:true,grid:{color:'#EAE7E0'}}}}
+  });
+}
+</script>
+</body>
+</html>
