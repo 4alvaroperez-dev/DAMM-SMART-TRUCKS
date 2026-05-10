@@ -1,0 +1,1285 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DAMM/DDI · Motor Logístico Inteligente</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --damm-red: #E8251A;
+    --damm-gold: #F5A623;
+    --damm-dark: #0F0F0F;
+    --damm-mid: #1A1A1A;
+    --damm-surface: #232323;
+    --damm-border: rgba(255,255,255,0.08);
+    --damm-text: #F0EDE8;
+    --damm-muted: rgba(240,237,232,0.5);
+    --damm-green: #22C55E;
+    --damm-blue: #3B82F6;
+    --damm-amber: #F59E0B;
+    --font: 'Space Grotesk', sans-serif;
+    --mono: 'JetBrains Mono', monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--damm-dark);
+    color: var(--damm-text);
+    font-family: var(--font);
+    font-size: 16px;
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+
+  /* NAV */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    background: rgba(15,15,15,0.9);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--damm-border);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 2rem; height: 60px;
+  }
+  .nav-logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 15px; letter-spacing: 0.05em; }
+  .nav-logo span { color: var(--damm-red); }
+  .nav-links { display: flex; gap: 2rem; }
+  .nav-links a { color: var(--damm-muted); text-decoration: none; font-size: 13px; font-weight: 500; letter-spacing: 0.03em; transition: color 0.2s; }
+  .nav-links a:hover { color: var(--damm-text); }
+  .nav-badge { background: var(--damm-red); color: #fff; font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 20px; letter-spacing: 0.05em; }
+
+  /* HERO */
+  .hero {
+    min-height: 100vh;
+    display: flex; flex-direction: column; justify-content: center; align-items: center;
+    text-align: center; padding: 120px 2rem 4rem;
+    position: relative; overflow: hidden;
+  }
+  .hero-grid {
+    position: absolute; inset: 0; opacity: 0.04;
+    background-image: linear-gradient(var(--damm-text) 1px, transparent 1px),
+                      linear-gradient(90deg, var(--damm-text) 1px, transparent 1px);
+    background-size: 60px 60px;
+  }
+  .hero-tag {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(232,37,26,0.12); border: 1px solid rgba(232,37,26,0.3);
+    color: #FF6B6B; font-size: 12px; font-weight: 600; letter-spacing: 0.1em;
+    padding: 6px 16px; border-radius: 20px; margin-bottom: 2rem;
+    text-transform: uppercase;
+  }
+  .hero h1 {
+    font-size: clamp(2.5rem, 6vw, 5rem);
+    font-weight: 700; line-height: 1.05; letter-spacing: -0.02em;
+    margin-bottom: 1.5rem;
+  }
+  .hero h1 em { font-style: normal; color: var(--damm-red); }
+  .hero-sub {
+    max-width: 680px; font-size: 1.15rem; color: var(--damm-muted);
+    margin-bottom: 3rem; font-weight: 300;
+  }
+  .hero-ctas { display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center; }
+  .btn-primary {
+    background: var(--damm-red); color: #fff; border: none;
+    padding: 14px 32px; border-radius: 8px; font-family: var(--font);
+    font-size: 14px; font-weight: 600; cursor: pointer;
+    letter-spacing: 0.02em; transition: all 0.2s;
+  }
+  .btn-primary:hover { background: #C01F15; transform: translateY(-1px); }
+  .btn-ghost {
+    background: transparent; color: var(--damm-text);
+    border: 1px solid var(--damm-border);
+    padding: 14px 32px; border-radius: 8px; font-family: var(--font);
+    font-size: 14px; font-weight: 500; cursor: pointer;
+    letter-spacing: 0.02em; transition: all 0.2s;
+  }
+  .btn-ghost:hover { border-color: rgba(255,255,255,0.3); background: rgba(255,255,255,0.04); }
+  .hero-stats {
+    display: flex; gap: 3rem; margin-top: 5rem; padding-top: 3rem;
+    border-top: 1px solid var(--damm-border);
+  }
+  .stat { text-align: center; }
+  .stat-n { font-size: 2.5rem; font-weight: 700; color: var(--damm-red); line-height: 1; }
+  .stat-l { font-size: 12px; color: var(--damm-muted); margin-top: 4px; letter-spacing: 0.05em; text-transform: uppercase; }
+
+  /* SECTIONS */
+  section { padding: 6rem 2rem; }
+  .container { max-width: 1200px; margin: 0 auto; }
+  .section-label {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.15em;
+    text-transform: uppercase; color: var(--damm-red); margin-bottom: 1rem;
+  }
+  h2 { font-size: clamp(2rem, 4vw, 3rem); font-weight: 700; letter-spacing: -0.02em; line-height: 1.1; margin-bottom: 1.5rem; }
+  .lead { font-size: 1.1rem; color: var(--damm-muted); max-width: 700px; font-weight: 300; }
+
+  /* PROBLEM vs SOLUTION */
+  .compare-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 1.5px;
+    margin-top: 3rem; border-radius: 16px; overflow: hidden;
+    border: 1px solid var(--damm-border);
+  }
+  .compare-card { background: var(--damm-surface); padding: 2.5rem; }
+  .compare-card.old { opacity: 0.7; }
+  .compare-title { font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 1.5rem; }
+  .compare-title.bad { color: #EF4444; }
+  .compare-title.good { color: var(--damm-green); }
+  .compare-item { display: flex; gap: 12px; margin-bottom: 1rem; font-size: 14px; }
+  .compare-item::before { flex-shrink: 0; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; }
+  .compare-card.old .compare-item::before { content: '✕'; background: rgba(239,68,68,0.15); color: #EF4444; }
+  .compare-card.new .compare-item::before { content: '✓'; background: rgba(34,197,94,0.15); color: var(--damm-green); }
+
+  /* ARCHITECTURE */
+  .arch-diagram {
+    background: var(--damm-surface); border: 1px solid var(--damm-border);
+    border-radius: 16px; padding: 2.5rem; margin-top: 3rem; overflow: hidden;
+  }
+  .arch-flow { display: flex; align-items: center; gap: 0; flex-wrap: nowrap; overflow-x: auto; }
+  .arch-node {
+    flex-shrink: 0; text-align: center; padding: 1.5rem 1.25rem;
+    min-width: 130px;
+  }
+  .arch-icon { font-size: 2rem; margin-bottom: 8px; }
+  .arch-label { font-size: 12px; font-weight: 600; color: var(--damm-text); }
+  .arch-sub { font-size: 11px; color: var(--damm-muted); margin-top: 4px; }
+  .arch-arrow { flex-shrink: 0; display: flex; flex-direction: column; align-items: center; padding: 0 0.5rem; }
+  .arch-arrow-line { width: 40px; height: 2px; background: linear-gradient(90deg, var(--damm-border), var(--damm-red)); }
+  .arch-arrow-tip { width: 0; height: 0; border-left: 6px solid var(--damm-red); border-top: 4px solid transparent; border-bottom: 4px solid transparent; margin-left: -1px; }
+  .arch-feedback {
+    display: flex; align-items: center; justify-content: center; gap: 12px;
+    margin-top: 2rem; padding: 1rem; background: rgba(232,37,26,0.06);
+    border: 1px solid rgba(232,37,26,0.2); border-radius: 8px;
+  }
+  .feedback-label { font-size: 13px; color: var(--damm-red); font-weight: 500; }
+
+  /* ALGORITHM SECTION */
+  .algo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 3rem; }
+  .algo-card {
+    background: var(--damm-surface); border: 1px solid var(--damm-border);
+    border-radius: 12px; padding: 2rem; position: relative; overflow: hidden;
+  }
+  .algo-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  }
+  .algo-card.routes::before { background: var(--damm-red); }
+  .algo-card.load::before { background: var(--damm-blue); }
+  .algo-card.retornables::before { background: var(--damm-amber); }
+  .algo-card.time::before { background: var(--damm-green); }
+  .algo-icon { font-size: 1.8rem; margin-bottom: 1rem; }
+  .algo-title { font-size: 16px; font-weight: 600; margin-bottom: 0.5rem; }
+  .algo-desc { font-size: 13px; color: var(--damm-muted); line-height: 1.6; }
+  .algo-formula {
+    margin-top: 1rem; padding: 0.75rem 1rem;
+    background: rgba(0,0,0,0.3); border-radius: 6px;
+    font-family: var(--mono); font-size: 11px; color: var(--damm-amber);
+    line-height: 1.8;
+  }
+
+  /* INTERACTIVE SIMULATOR */
+  .sim-wrapper {
+    background: var(--damm-surface); border: 1px solid var(--damm-border);
+    border-radius: 20px; overflow: hidden; margin-top: 3rem;
+  }
+  .sim-toolbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 1rem 1.5rem; border-bottom: 1px solid var(--damm-border);
+    gap: 1rem; flex-wrap: wrap;
+  }
+  .sim-title { font-size: 13px; font-weight: 600; letter-spacing: 0.05em; color: var(--damm-muted); text-transform: uppercase; }
+  .sim-controls { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+  .sim-btn {
+    background: rgba(255,255,255,0.06); border: 1px solid var(--damm-border);
+    color: var(--damm-text); padding: 8px 16px; border-radius: 6px;
+    font-family: var(--font); font-size: 12px; font-weight: 500; cursor: pointer;
+    transition: all 0.2s;
+  }
+  .sim-btn:hover { background: rgba(255,255,255,0.1); }
+  .sim-btn.active { background: var(--damm-red); border-color: var(--damm-red); }
+  .sim-body { display: grid; grid-template-columns: 340px 1fr; min-height: 600px; }
+  .sim-sidebar {
+    border-right: 1px solid var(--damm-border);
+    overflow-y: auto; max-height: 600px;
+  }
+  .sim-map { position: relative; background: #0D1117; overflow: hidden; }
+
+  /* CLIENT LIST */
+  .client-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 16px; border-bottom: 1px solid var(--damm-border);
+    cursor: pointer; transition: background 0.15s;
+  }
+  .client-item:hover { background: rgba(255,255,255,0.04); }
+  .client-item.active { background: rgba(232,37,26,0.08); border-left: 3px solid var(--damm-red); }
+  .client-num {
+    width: 28px; height: 28px; border-radius: 50%; background: var(--damm-red);
+    color: #fff; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .client-info { flex: 1; min-width: 0; }
+  .client-name { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .client-meta { font-size: 11px; color: var(--damm-muted); }
+  .client-vol { font-family: var(--mono); font-size: 11px; color: var(--damm-amber); flex-shrink: 0; }
+  .client-ret { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .has-ret { background: var(--damm-amber); }
+  .no-ret { background: var(--damm-border); }
+
+  /* MAP SVG */
+  #route-map { width: 100%; height: 100%; }
+  .map-node { cursor: pointer; transition: all 0.2s; }
+  .map-node:hover circle { r: 14; }
+  .route-line { stroke-dasharray: 8 4; animation: dash 1s linear infinite; }
+  @keyframes dash { to { stroke-dashoffset: -24; } }
+
+  /* KPI PANEL */
+  .kpi-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 1px; background: var(--damm-border);
+    border-top: 1px solid var(--damm-border);
+  }
+  .kpi-card { background: var(--damm-surface); padding: 1.25rem 1.5rem; }
+  .kpi-label { font-size: 11px; color: var(--damm-muted); letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 4px; }
+  .kpi-val { font-size: 1.6rem; font-weight: 700; line-height: 1; }
+  .kpi-diff { font-size: 11px; margin-top: 4px; font-weight: 500; }
+  .kpi-up { color: var(--damm-green); }
+  .kpi-down { color: #EF4444; }
+
+  /* LOAD OPTIMIZER */
+  .load-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 3rem; }
+  .truck-visual {
+    background: var(--damm-surface); border: 1px solid var(--damm-border);
+    border-radius: 12px; padding: 1.5rem;
+  }
+  .truck-header { font-size: 13px; font-weight: 600; color: var(--damm-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 1rem; }
+  .truck-svg-wrap { width: 100%; aspect-ratio: 16/9; position: relative; }
+  .zone-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+  .access-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;
+    margin: 2px;
+  }
+  .acc-hi { background: rgba(34,197,94,0.15); color: var(--damm-green); }
+  .acc-med { background: rgba(245,158,11,0.15); color: var(--damm-amber); }
+  .acc-lo { background: rgba(239,68,68,0.15); color: #EF4444; }
+
+  /* COMPARISON */
+  .compare-bars { margin-top: 2rem; }
+  .bar-row { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; }
+  .bar-label { font-size: 13px; width: 160px; flex-shrink: 0; }
+  .bar-track { flex: 1; height: 8px; background: rgba(255,255,255,0.06); border-radius: 4px; overflow: hidden; position: relative; }
+  .bar-fill { height: 100%; border-radius: 4px; transition: width 1s ease; }
+  .bar-old { background: rgba(239,68,68,0.5); }
+  .bar-new { background: var(--damm-green); }
+  .bar-val { font-family: var(--mono); font-size: 12px; width: 70px; text-align: right; color: var(--damm-muted); }
+
+  /* ROADMAP */
+  .roadmap { display: flex; flex-direction: column; gap: 0; margin-top: 3rem; position: relative; }
+  .roadmap::before { content: ''; position: absolute; left: 20px; top: 20px; bottom: 20px; width: 2px; background: var(--damm-border); }
+  .rm-item { display: flex; gap: 2rem; padding: 1.5rem 0; position: relative; }
+  .rm-dot { width: 42px; height: 42px; border-radius: 50%; background: var(--damm-surface); border: 2px solid var(--damm-border); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 18px; z-index: 1; }
+  .rm-item.done .rm-dot { background: var(--damm-red); border-color: var(--damm-red); }
+  .rm-item.next .rm-dot { border-color: var(--damm-amber); }
+  .rm-content { flex: 1; padding-top: 8px; }
+  .rm-title { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+  .rm-desc { font-size: 13px; color: var(--damm-muted); }
+  .rm-tag { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; padding: 2px 8px; border-radius: 4px; margin-left: 8px; }
+  .tag-done { background: rgba(232,37,26,0.15); color: var(--damm-red); }
+  .tag-next { background: rgba(245,158,11,0.15); color: var(--damm-amber); }
+  .tag-future { background: rgba(59,130,246,0.15); color: var(--damm-blue); }
+
+  /* FOOTER */
+  footer { border-top: 1px solid var(--damm-border); padding: 2rem; text-align: center; font-size: 13px; color: var(--damm-muted); }
+
+  /* TABS */
+  .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--damm-border); margin-bottom: 2rem; }
+  .tab {
+    padding: 10px 20px; font-size: 13px; font-weight: 500; cursor: pointer;
+    border-bottom: 2px solid transparent; transition: all 0.2s; color: var(--damm-muted);
+  }
+  .tab.active { color: var(--damm-text); border-bottom-color: var(--damm-red); }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* ANIMATIONS */
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+  .animate { opacity: 0; }
+  .animate.visible { animation: fadeUp 0.6s ease forwards; }
+
+  @media (max-width: 768px) {
+    .compare-grid, .algo-grid, .load-grid { grid-template-columns: 1fr; }
+    .sim-body { grid-template-columns: 1fr; }
+    .kpi-grid { grid-template-columns: 1fr 1fr; }
+    .hero-stats { flex-direction: column; gap: 1.5rem; align-items: center; }
+    .sim-sidebar { max-height: 300px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect width="24" height="24" rx="6" fill="#E8251A"/><path d="M6 8h12M6 12h8M6 16h10" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>
+    <span>DDI</span> LogisticOS
+  </div>
+  <div class="nav-links">
+    <a href="#problema">Problema</a>
+    <a href="#motor">Motor</a>
+    <a href="#simulador">Simulador</a>
+    <a href="#carga">Carga</a>
+    <a href="#resultados">Resultados</a>
+  </div>
+  <div class="nav-badge">HACKATHON 2026</div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-grid"></div>
+  <div class="hero-tag">⚡ Optimización logística · Mollet del Vallès</div>
+  <h1>La ruta y la carga,<br><em>calculadas juntas.</em></h1>
+  <p class="hero-sub">Un motor logístico que genera automáticamente rutas óptimas y la distribución física del camión de forma simultánea — no secuencial.</p>
+  <div class="hero-ctas">
+    <a href="#simulador" class="btn-primary" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px;">Ver simulador en vivo →</a>
+    <a href="#motor" class="btn-ghost" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px;">Cómo funciona</a>
+  </div>
+  <div class="hero-stats">
+    <div class="stat"><div class="stat-n">23%</div><div class="stat-l">Reducción tiempo descarga<br><span style="font-size:10px;color:var(--damm-muted);font-weight:400">vs modelo SKU-based</span></div></div>
+    <div class="stat"><div class="stat-n">18</div><div class="stat-l">Clientes/ruta</div></div>
+    <div class="stat"><div class="stat-n">60%</div><div class="stat-l">Retornables</div></div>
+    <div class="stat"><div class="stat-n">4</div><div class="stat-l">Rutas Mollet</div></div>
+  </div>
+</section>
+
+<!-- PROBLEMA -->
+<section id="problema">
+  <div class="container">
+    <div class="section-label">01 · El problema</div>
+    <h2>Dos sistemas que deberían<br>ser uno</h2>
+    <p class="lead">Actualmente Damm optimiza la ruta primero y luego organiza la carga. Este enfoque secuencial genera fricción operativa, movimientos innecesarios y tiempo de descarga subóptimo.</p>
+
+    <div class="compare-grid">
+      <div class="compare-card old">
+        <div class="compare-title bad">Sistema actual</div>
+        <div class="compare-item">Rutas fijas definidas manualmente en Excel</div>
+        <div class="compare-item">Carga organizada por SKU, no por cliente</div>
+        <div class="compare-item">La ruta no considera accesibilidad de carga</div>
+        <div class="compare-item">Retornables gestionados aparte</div>
+        <div class="compare-item">Depende de la experiencia del repartidor</div>
+        <div class="compare-item">Sin optimización dinámica por ventanas horarias</div>
+        <div class="compare-item">Sin feedback para mejora continua</div>
+      </div>
+      <div class="compare-card new">
+        <div class="compare-title good">Sistema LogisticOS</div>
+        <div class="compare-item">Rutas generadas automáticamente desde cero</div>
+        <div class="compare-item">Carga organizada por cliente · orden de entrega</div>
+        <div class="compare-item">Ruta y carga calculadas simultáneamente</div>
+        <div class="compare-item">Espacio dinámico para retornables integrado</div>
+        <div class="compare-item">Algoritmo reproducible y escalable</div>
+        <div class="compare-item">Ventanas horarias y tráfico en tiempo real</div>
+        <div class="compare-item">KPIs y benchmarking automático vs histórico</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- MOTOR -->
+<section id="motor" style="background: rgba(232,37,26,0.03);">
+  <div class="container">
+    <div class="section-label">02 · El motor</div>
+    <h2>Optimización conjunta<br>ruta + carga</h2>
+    <p class="lead">El insight clave: la ruta óptima depende de cómo esté cargado el camión, y la carga óptima depende del orden de la ruta. Por eso se calculan juntas.</p>
+
+    <div class="arch-diagram">
+      <div class="arch-flow">
+        <div class="arch-node">
+          <div class="arch-icon">📦</div>
+          <div class="arch-label">Pedidos del día</div>
+          <div class="arch-sub">Clientes · SKUs · Volumen</div>
+        </div>
+        <div class="arch-arrow"><div class="arch-arrow-line"></div><div class="arch-arrow-tip"></div></div>
+        <div class="arch-node">
+          <div class="arch-icon">🌍</div>
+          <div class="arch-label">Geolocalización</div>
+          <div class="arch-sub">Coords + distancias reales</div>
+        </div>
+        <div class="arch-arrow"><div class="arch-arrow-line"></div><div class="arch-arrow-tip"></div></div>
+        <div class="arch-node" style="border: 2px solid var(--damm-red); border-radius: 12px; background: rgba(232,37,26,0.08);">
+          <div class="arch-icon">⚙️</div>
+          <div class="arch-label" style="color:var(--damm-red)">Motor conjunto</div>
+          <div class="arch-sub">VRP + Bin Packing</div>
+        </div>
+        <div class="arch-arrow"><div class="arch-arrow-line"></div><div class="arch-arrow-tip"></div></div>
+        <div class="arch-node">
+          <div class="arch-icon">🗺️</div>
+          <div class="arch-label">Ruta óptima</div>
+          <div class="arch-sub">Orden · Tiempos · KPIs</div>
+        </div>
+        <div class="arch-arrow"><div class="arch-arrow-line"></div><div class="arch-arrow-tip"></div></div>
+        <div class="arch-node">
+          <div class="arch-icon">🚛</div>
+          <div class="arch-label">Carga óptima</div>
+          <div class="arch-sub">Zonas · Accesibilidad</div>
+        </div>
+      </div>
+      <div class="arch-feedback">
+        <span style="font-size:1.2rem">🔄</span>
+        <span class="feedback-label">Retroalimentación continua: la carga restringe la ruta · la ruta define la carga · se itera hasta convergencia</span>
+      </div>
+    </div>
+
+    <div class="algo-grid" style="margin-top:2rem">
+      <div class="algo-card routes">
+        <div class="algo-icon">🗺️</div>
+        <div class="algo-title">VRP con restricciones múltiples</div>
+        <div class="algo-desc">Vehicle Routing Problem extendido con ventanas horarias (VRPTW), capacidad dinámica y penalizaciones por interferencia de carga.</div>
+        <div class="algo-formula">
+Minimizar: Σ(d_ij · x_ij) + α·T_descarga
+             + β·Interferencia + γ·Retornables
+Sujeto a:
+  · Ventanas horarias [a_i, b_i]
+  · Capacidad útil Q(t) — dinámica
+  · Accesibilidad lateral A_k ≥ umbral
+        </div>
+      </div>
+      <div class="algo-card load">
+        <div class="algo-icon">📐</div>
+        <div class="algo-title">Bin Packing 3D orientado a acceso</div>
+        <div class="algo-desc">Los artículos del último cliente en entregarse se cargan primero (fondo). La accesibilidad lateral es la restricción principal, no solo el volumen.</div>
+        <div class="algo-formula">
+Zonas: [RETORNO] [FONDO] [MEDIO] [FRONTAL]
+Prioridad carga ← Prioridad entrega inversa
+Score_zona = Acc_lateral · Volumen^-1 · Δt_descarga
+Retornables: zona frontal reservada ~30%
+        </div>
+      </div>
+      <div class="algo-card retornables">
+        <div class="algo-icon">♻️</div>
+        <div class="algo-title">Gestión dinámica de retornables</div>
+        <div class="algo-desc">El 60% del volumen son retornables. El algoritmo gestiona el espacio dinámico del camión que se libera con cada entrega y se ocupa al recoger.</div>
+        <div class="algo-formula">
+Capacidad(t) = Q_inicial - Entregado(t) + Recogido(t)
+Zona_ret(t) = max(30%, Q_ret_pendiente / Q_total)
+Reoptimización si ΔCapacidad > umbral_crítico
+        </div>
+      </div>
+      <div class="algo-card time">
+        <div class="algo-icon">⏱️</div>
+        <div class="algo-title">Modelo de tiempo operativo total</div>
+        <div class="algo-desc">No solo minimizamos km. El tiempo total incluye conducción, descarga, manipulación y los movimientos internos debidos a una carga subóptima.</div>
+        <div class="algo-formula">
+T_total = T_conducción + T_descarga
+         + T_manipulación + T_retornables
+T_manipulación ∝ 1/Accesibilidad · n_movimientos
+Benchmark: Δ vs ruta histórica Excel
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SIMULADOR INTERACTIVO -->
+<section id="simulador">
+  <div class="container">
+    <div class="section-label">03 · Simulador en vivo</div>
+    <h2>Ruta generada<br>automáticamente</h2>
+    <p class="lead">Datos reales del 30/01/2026 · 4 rutas · Mollet del Vallès. Cada camión tiene su propia ruta codificada por color. Haz clic en un cliente para ver su detalle.</p>
+
+    <!-- LEYENDA DE CAMIONES -->
+    <div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:1.5rem;margin-bottom:2rem;padding:1rem 1.5rem;background:var(--damm-surface);border:1px solid var(--damm-border);border-radius:12px;align-items:center;">
+      <span style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--damm-muted);margin-right:8px;">Flota activa:</span>
+      <div style="display:flex;align-items:center;gap:7px;font-size:13px;font-weight:600;">
+        <span style="display:inline-block;width:14px;height:14px;border-radius:3px;background:#22C55E;"></span>
+        🚛 DR0001 — Camión Grande (ILLA/E.FRANÇ)
+      </div>
+      <div style="display:flex;align-items:center;gap:7px;font-size:13px;font-weight:600;">
+        <span style="display:inline-block;width:14px;height:14px;border-radius:3px;background:#3B82F6;"></span>
+        🚚 DR0006 — Camión Mediano (BARRI OLIVA · PRATRIBA)
+      </div>
+      <div style="display:flex;align-items:center;gap:7px;font-size:13px;font-weight:600;">
+        <span style="display:inline-block;width:14px;height:14px;border-radius:3px;background:#F59E0B;"></span>
+        🚛 DR0017 — Camión Grande (PANTIQ · RAMBLA NOVA)
+      </div>
+      <div style="display:flex;align-items:center;gap:7px;font-size:13px;font-weight:600;">
+        <span style="display:inline-block;width:14px;height:14px;border-radius:3px;background:#E8251A;"></span>
+        🚐 DR0022 — Furgoneta (PARETS · CAN BORRELL)
+      </div>
+      <div style="margin-left:auto;display:flex;align-items:center;gap:6px;font-size:11px;color:var(--damm-muted);">
+        <span style="width:8px;height:8px;border-radius:50%;background:var(--damm-amber);display:inline-block;"></span>
+        punto amarillo = retornables
+      </div>
+    </div>
+
+    <!-- COMPARACIÓN: SISTEMA ACTUAL vs OPTIMIZADO -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:2rem;">
+
+      <!-- SISTEMA ACTUAL -->
+      <div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:0.75rem;">
+          <div style="width:10px;height:10px;border-radius:2px;background:#EF4444;"></div>
+          <span style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#EF4444;">Sistema actual — rutas manuales</span>
+        </div>
+        <div class="sim-wrapper" style="margin-top:0;border-color:rgba(239,68,68,0.25);">
+          <div class="sim-toolbar" style="background:rgba(239,68,68,0.06);">
+            <span class="sim-title" style="color:#EF4444;">Rutas Excel · Sin optimización · 30 ene 2026</span>
+          </div>
+          <div class="sim-body" style="min-height:420px;">
+            <div class="sim-sidebar" id="old-client-list" style="max-height:420px;"></div>
+            <div class="sim-map" id="old-map-container" style="position:relative;background:#0D1117;">
+              <!-- Map background image (Mollet del Vallès street grid aesthetic) -->
+              <svg id="old-map-bg" style="position:absolute;inset:0;width:100%;height:100%;opacity:0.15;" viewBox="0 0 660 420" xmlns="http://www.w3.org/2000/svg">
+                <!-- Street grid background -->
+                <rect width="660" height="420" fill="#0D1117"/>
+                <!-- Main avenues -->
+                <line x1="0" y1="140" x2="660" y2="140" stroke="#3B82F6" stroke-width="3" opacity="0.6"/>
+                <line x1="0" y1="260" x2="660" y2="260" stroke="#3B82F6" stroke-width="2" opacity="0.4"/>
+                <line x1="160" y1="0" x2="160" y2="420" stroke="#3B82F6" stroke-width="3" opacity="0.5"/>
+                <line x1="360" y1="0" x2="360" y2="420" stroke="#3B82F6" stroke-width="2" opacity="0.4"/>
+                <line x1="520" y1="0" x2="520" y2="420" stroke="#3B82F6" stroke-width="2" opacity="0.3"/>
+                <!-- Secondary streets -->
+                <line x1="0" y1="80" x2="660" y2="80" stroke="#334155" stroke-width="1.5" opacity="0.8"/>
+                <line x1="0" y1="200" x2="660" y2="200" stroke="#334155" stroke-width="1.5" opacity="0.8"/>
+                <line x1="0" y1="320" x2="660" y2="320" stroke="#334155" stroke-width="1.5" opacity="0.8"/>
+                <line x1="80" y1="0" x2="80" y2="420" stroke="#334155" stroke-width="1.5" opacity="0.8"/>
+                <line x1="240" y1="0" x2="240" y2="420" stroke="#334155" stroke-width="1.5" opacity="0.8"/>
+                <line x1="440" y1="0" x2="440" y2="420" stroke="#334155" stroke-width="1.5" opacity="0.8"/>
+                <line x1="600" y1="0" x2="600" y2="420" stroke="#334155" stroke-width="1.5" opacity="0.8"/>
+                <!-- Diagonal roads -->
+                <line x1="0" y1="420" x2="300" y2="0" stroke="#334155" stroke-width="1" opacity="0.5"/>
+                <line x1="200" y1="420" x2="660" y2="100" stroke="#334155" stroke-width="1" opacity="0.4"/>
+                <!-- Park/river area -->
+                <rect x="280" y="180" width="100" height="60" rx="4" fill="#1A3A1A" opacity="0.6"/>
+                <text x="330" y="214" text-anchor="middle" fill="#22C55E" font-size="8" opacity="0.7">Parc</text>
+                <!-- Zone labels -->
+                <text x="80" y="55" text-anchor="middle" fill="#60A5FA" font-size="9" opacity="0.8">ILLA / E.FRANÇ</text>
+                <text x="300" y="55" text-anchor="middle" fill="#60A5FA" font-size="9" opacity="0.6">BARRI OLIVA</text>
+                <text x="480" y="55" text-anchor="middle" fill="#60A5FA" font-size="9" opacity="0.6">PANTIQ / MAGAROL</text>
+                <text x="200" y="390" text-anchor="middle" fill="#60A5FA" font-size="9" opacity="0.6">RAMBLA NOVA</text>
+                <text x="560" y="390" text-anchor="middle" fill="#60A5FA" font-size="9" opacity="0.6">PARETS / CAN BORRELL</text>
+              </svg>
+              <svg id="old-route-map" viewBox="0 0 660 420" style="width:100%;height:100%;position:relative;z-index:1;"></svg>
+              <div id="old-client-tooltip" style="display:none;position:absolute;background:var(--damm-surface);border:1px solid var(--damm-border);border-radius:8px;padding:12px 16px;font-size:12px;pointer-events:none;min-width:200px;z-index:10;"></div>
+            </div>
+          </div>
+          <div class="kpi-grid" style="grid-template-columns:repeat(2,1fr);">
+            <div class="kpi-card"><div class="kpi-label">Tiempo total</div><div class="kpi-val" style="color:#EF4444;">8h 00m</div><div class="kpi-diff kpi-down">Sistema manual</div></div>
+            <div class="kpi-card"><div class="kpi-label">Distancia</div><div class="kpi-val" style="color:#EF4444;">43.7 km</div><div class="kpi-diff kpi-down">Rutas fijas Excel</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SISTEMA OPTIMIZADO -->
+      <div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:0.75rem;">
+          <div style="width:10px;height:10px;border-radius:2px;background:var(--damm-green);"></div>
+          <span style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--damm-green);">LogisticOS — rutas optimizadas</span>
+        </div>
+        <div class="sim-wrapper" style="margin-top:0;border-color:rgba(34,197,94,0.25);">
+          <div class="sim-toolbar" style="background:rgba(34,197,94,0.06);">
+            <span class="sim-title" style="color:var(--damm-green);">Motor VRP+Bin Packing · Mollet · 30 ene 2026</span>
+            <div class="sim-controls">
+              <button class="sim-btn active" onclick="setView('ruta',event)">Vista ruta</button>
+              <button class="sim-btn" onclick="runOptimize()">⚡ Optimizar</button>
+            </div>
+          </div>
+          <div class="sim-body" style="min-height:420px;">
+            <div class="sim-sidebar" id="client-list" style="max-height:420px;"></div>
+            <div class="sim-map" id="map-container" style="position:relative;background:#0D1117;">
+              <!-- Map background -->
+              <svg id="map-bg" style="position:absolute;inset:0;width:100%;height:100%;opacity:0.15;" viewBox="0 0 660 420" xmlns="http://www.w3.org/2000/svg">
+                <rect width="660" height="420" fill="#0D1117"/>
+                <line x1="0" y1="140" x2="660" y2="140" stroke="#3B82F6" stroke-width="3" opacity="0.6"/>
+                <line x1="0" y1="260" x2="660" y2="260" stroke="#3B82F6" stroke-width="2" opacity="0.4"/>
+                <line x1="160" y1="0" x2="160" y2="420" stroke="#3B82F6" stroke-width="3" opacity="0.5"/>
+                <line x1="360" y1="0" x2="360" y2="420" stroke="#3B82F6" stroke-width="2" opacity="0.4"/>
+                <line x1="520" y1="0" x2="520" y2="420" stroke="#3B82F6" stroke-width="2" opacity="0.3"/>
+                <line x1="0" y1="80" x2="660" y2="80" stroke="#334155" stroke-width="1.5" opacity="0.8"/>
+                <line x1="0" y1="200" x2="660" y2="200" stroke="#334155" stroke-width="1.5" opacity="0.8"/>
+                <line x1="0" y1="320" x2="660" y2="320" stroke="#334155" stroke-width="1.5" opacity="0.8"/>
+                <line x1="80" y1="0" x2="80" y2="420" stroke="#334155" stroke-width="1.5" opacity="0.8"/>
+                <line x1="240" y1="0" x2="240" y2="420" stroke="#334155" stroke-width="1.5" opacity="0.8"/>
+                <line x1="440" y1="0" x2="440" y2="420" stroke="#334155" stroke-width="1.5" opacity="0.8"/>
+                <line x1="600" y1="0" x2="600" y2="420" stroke="#334155" stroke-width="1.5" opacity="0.8"/>
+                <line x1="0" y1="420" x2="300" y2="0" stroke="#334155" stroke-width="1" opacity="0.5"/>
+                <line x1="200" y1="420" x2="660" y2="100" stroke="#334155" stroke-width="1" opacity="0.4"/>
+                <rect x="280" y="180" width="100" height="60" rx="4" fill="#1A3A1A" opacity="0.6"/>
+                <text x="330" y="214" text-anchor="middle" fill="#22C55E" font-size="8" opacity="0.7">Parc</text>
+                <text x="80" y="55" text-anchor="middle" fill="#60A5FA" font-size="9" opacity="0.8">ILLA / E.FRANÇ</text>
+                <text x="300" y="55" text-anchor="middle" fill="#60A5FA" font-size="9" opacity="0.6">BARRI OLIVA</text>
+                <text x="480" y="55" text-anchor="middle" fill="#60A5FA" font-size="9" opacity="0.6">PANTIQ / MAGAROL</text>
+                <text x="200" y="390" text-anchor="middle" fill="#60A5FA" font-size="9" opacity="0.6">RAMBLA NOVA</text>
+                <text x="560" y="390" text-anchor="middle" fill="#60A5FA" font-size="9" opacity="0.6">PARETS / CAN BORRELL</text>
+              </svg>
+              <svg id="route-map" viewBox="0 0 660 420" style="width:100%;height:100%;position:relative;z-index:1;"></svg>
+              <div id="client-tooltip" style="display:none;position:absolute;background:var(--damm-surface);border:1px solid var(--damm-border);border-radius:8px;padding:12px 16px;font-size:12px;pointer-events:none;min-width:200px;z-index:10;"></div>
+            </div>
+          </div>
+          <div class="kpi-grid">
+            <div class="kpi-card">
+              <div class="kpi-label">Tiempo total estimado</div>
+              <div class="kpi-val" id="kpi-time">6h 12m</div>
+              <div class="kpi-diff kpi-up">↓ 1h 48m vs manual</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label">Distancia total</div>
+              <div class="kpi-val" id="kpi-km">38.4 km</div>
+              <div class="kpi-diff kpi-up">↓ 12% vs actual</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label">Eficiencia de carga</div>
+              <div class="kpi-val" id="kpi-load">87%</div>
+              <div class="kpi-diff kpi-up">↑ 23% vs SKU-only</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label">Movimientos evitados</div>
+              <div class="kpi-val" id="kpi-mov">34</div>
+              <div class="kpi-diff kpi-up">↓ 34 maniobras internas</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CARGA INTERACTIVA -->
+<section id="carga" style="background:rgba(59,130,246,0.03)">
+  <div class="container">
+    <div class="section-label">04 · Organización de carga</div>
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:1rem;">
+      <h2 style="margin-bottom:0;">El camión, visto<br>desde dentro</h2>
+      <a href="PAGINA_PARA_CALCULAR_LA_CARGA.html" target="_blank" style="display:inline-flex;align-items:center;gap:8px;background:var(--damm-blue);color:#fff;text-decoration:none;padding:12px 22px;border-radius:8px;font-size:13px;font-weight:600;letter-spacing:0.02em;transition:all 0.2s;border:1px solid rgba(59,130,246,0.4);flex-shrink:0;" onmouseover="this.style.background='#2563EB'" onmouseout="this.style.background='var(--damm-blue)'">
+        📦 Abrir calculadora de carga →
+      </a>
+    </div>
+    <p class="lead">La distribución física del camión se calcula automáticamente a partir de la ruta generada. Los primeros clientes en entregarse van al frente; los últimos, al fondo.</p>
+
+    <div class="load-grid">
+      <div class="truck-visual">
+        <div class="truck-header">🚛 Vista lateral — acceso por lonas</div>
+        <svg viewBox="0 0 500 240" width="100%" style="display:block;">
+          <!-- Camión silueta -->
+          <rect x="10" y="40" width="460" height="170" rx="8" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="1.5"/>
+          <!-- Cabina -->
+          <rect x="440" y="60" width="45" height="150" rx="6" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+          <text x="462" y="140" text-anchor="middle" fill="rgba(255,255,255,0.4)" font-size="9" font-family="Space Grotesk">CAB</text>
+          <!-- Ruedas -->
+          <circle cx="80" cy="215" r="18" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.25)" stroke-width="2"/>
+          <circle cx="400" cy="215" r="18" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.25)" stroke-width="2"/>
+          <!-- Zona RETORNO -->
+          <rect x="18" y="48" width="90" height="154" rx="4" fill="rgba(245,158,11,0.15)" stroke="rgba(245,158,11,0.4)" stroke-width="1"/>
+          <text x="63" y="118" text-anchor="middle" fill="rgba(245,158,11,0.9)" font-size="9" font-family="Space Grotesk" font-weight="600">RETORNO</text>
+          <text x="63" y="130" text-anchor="middle" fill="rgba(245,158,11,0.6)" font-size="8" font-family="Space Grotesk">~30% reservado</text>
+          <!-- Zona FRONTAL (primeros clientes) -->
+          <rect x="116" y="48" width="100" height="154" rx="4" fill="rgba(34,197,94,0.12)" stroke="rgba(34,197,94,0.35)" stroke-width="1"/>
+          <text x="166" y="110" text-anchor="middle" fill="rgba(34,197,94,0.9)" font-size="9" font-family="Space Grotesk" font-weight="600">FRONTAL</text>
+          <text x="166" y="122" text-anchor="middle" fill="rgba(34,197,94,0.7)" font-size="8" font-family="Space Grotesk">Clientes 1–6</text>
+          <text x="166" y="134" text-anchor="middle" fill="rgba(34,197,94,0.5)" font-size="8" font-family="Space Grotesk">Acc. alta ✓</text>
+          <!-- Zonas de carga cliente -->
+          <rect x="122" y="56" width="40" height="30" rx="3" fill="rgba(34,197,94,0.3)" stroke="rgba(34,197,94,0.5)" stroke-width="0.5"/>
+          <text x="142" y="74" text-anchor="middle" fill="rgba(255,255,255,0.8)" font-size="7" font-family="Space Grotesk">BAR GRN</text>
+          <rect x="168" y="56" width="40" height="30" rx="3" fill="rgba(34,197,94,0.25)" stroke="rgba(34,197,94,0.5)" stroke-width="0.5"/>
+          <text x="188" y="74" text-anchor="middle" fill="rgba(255,255,255,0.8)" font-size="7" font-family="Space Grotesk">PALENT.</text>
+          <rect x="122" y="92" width="88" height="35" rx="3" fill="rgba(34,197,94,0.2)" stroke="rgba(34,197,94,0.4)" stroke-width="0.5"/>
+          <text x="166" y="113" text-anchor="middle" fill="rgba(255,255,255,0.7)" font-size="7" font-family="Space Grotesk">BARRILES ED30 (4u)</text>
+          <!-- Zona MEDIA -->
+          <rect x="222" y="48" width="100" height="154" rx="4" fill="rgba(59,130,246,0.12)" stroke="rgba(59,130,246,0.35)" stroke-width="1"/>
+          <text x="272" y="110" text-anchor="middle" fill="rgba(59,130,246,0.9)" font-size="9" font-family="Space Grotesk" font-weight="600">MEDIA</text>
+          <text x="272" y="122" text-anchor="middle" fill="rgba(59,130,246,0.7)" font-size="8" font-family="Space Grotesk">Clientes 7–12</text>
+          <text x="272" y="134" text-anchor="middle" fill="rgba(59,130,246,0.5)" font-size="8" font-family="Space Grotesk">Acc. media ◑</text>
+          <rect x="228" y="56" width="86" height="28" rx="3" fill="rgba(59,130,246,0.25)" stroke="rgba(59,130,246,0.4)" stroke-width="0.5"/>
+          <text x="271" y="73" text-anchor="middle" fill="rgba(255,255,255,0.7)" font-size="7" font-family="Space Grotesk">ED13 CAJ × 48</text>
+          <rect x="228" y="90" width="40" height="28" rx="3" fill="rgba(59,130,246,0.2)" stroke="rgba(59,130,246,0.4)" stroke-width="0.5"/>
+          <text x="248" y="107" text-anchor="middle" fill="rgba(255,255,255,0.6)" font-size="7" font-family="Space Grotesk">AGUA</text>
+          <rect x="274" y="90" width="40" height="28" rx="3" fill="rgba(59,130,246,0.2)" stroke="rgba(59,130,246,0.4)" stroke-width="0.5"/>
+          <text x="294" y="107" text-anchor="middle" fill="rgba(255,255,255,0.6)" font-size="7" font-family="Space Grotesk">CAFÉ</text>
+          <!-- Zona FONDO -->
+          <rect x="328" y="48" width="102" height="154" rx="4" fill="rgba(232,37,26,0.12)" stroke="rgba(232,37,26,0.35)" stroke-width="1"/>
+          <text x="379" y="110" text-anchor="middle" fill="rgba(232,37,26,0.9)" font-size="9" font-family="Space Grotesk" font-weight="600">FONDO</text>
+          <text x="379" y="122" text-anchor="middle" fill="rgba(232,37,26,0.7)" font-size="8" font-family="Space Grotesk">Clientes 13–18</text>
+          <text x="379" y="134" text-anchor="middle" fill="rgba(232,37,26,0.5)" font-size="8" font-family="Space Grotesk">Acc. baja (ok)</text>
+          <rect x="334" y="56" width="90" height="28" rx="3" fill="rgba(232,37,26,0.25)" stroke="rgba(232,37,26,0.4)" stroke-width="0.5"/>
+          <text x="379" y="73" text-anchor="middle" fill="rgba(255,255,255,0.7)" font-size="7" font-family="Space Grotesk">CAN RAJOLER</text>
+          <rect x="334" y="90" width="42" height="28" rx="3" fill="rgba(232,37,26,0.2)" stroke="rgba(232,37,26,0.4)" stroke-width="0.5"/>
+          <text x="355" y="107" text-anchor="middle" fill="rgba(255,255,255,0.6)" font-size="7" font-family="Space Grotesk">VERI</text>
+          <rect x="382" y="90" width="42" height="28" rx="3" fill="rgba(232,37,26,0.2)" stroke="rgba(232,37,26,0.4)" stroke-width="0.5"/>
+          <text x="403" y="107" text-anchor="middle" fill="rgba(255,255,255,0.6)" font-size="7" font-family="Space Grotesk">VICHY</text>
+          <!-- Flecha dirección acceso -->
+          <path d="M460 20 L10 20" stroke="rgba(255,255,255,0.3)" stroke-width="1" marker-end="url(#arroww)" fill="none" stroke-dasharray="4 3"/>
+          <text x="235" y="16" text-anchor="middle" fill="rgba(255,255,255,0.35)" font-size="9" font-family="Space Grotesk">← dirección de acceso lateral</text>
+          <defs><marker id="arroww" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto"><path d="M6 1L1 3L6 5" stroke="rgba(255,255,255,0.35)" stroke-width="1" fill="none"/></marker></defs>
+        </svg>
+        <div style="margin-top:1rem;display:flex;flex-wrap:wrap;gap:6px;">
+          <span class="access-badge acc-hi">🟢 Frontal — alta accesibilidad</span>
+          <span class="access-badge acc-med">🟡 Media — acceso ◑</span>
+          <span class="access-badge acc-lo">🔴 Fondo — sólo últimas entregas</span>
+          <span class="access-badge" style="background:rgba(245,158,11,0.15);color:var(--damm-amber)">♻️ Retorno — reservado</span>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:1rem;">
+        <div class="truck-visual">
+          <div class="truck-header">📊 Ocupación actual del camión</div>
+          <div id="load-timeline" style="margin-top:0.5rem;"></div>
+        </div>
+        <div class="truck-visual">
+          <div class="truck-header">🧠 Lógica de agrupación híbrida</div>
+          <div style="font-size:13px;color:var(--damm-muted);line-height:1.8;margin-top:0.5rem;">
+            <p>El modelo híbrido agrupa por <strong style="color:var(--damm-text)">cliente × SKU familiar</strong>:</p>
+            <br>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px;">
+              <div style="background:rgba(255,255,255,0.04);border-radius:6px;padding:10px;">
+                <div style="font-size:11px;font-weight:600;color:var(--damm-muted);margin-bottom:4px;">ZONA por cliente</div>
+                <div style="font-size:12px;">Toda la mercancía de un cliente va junta → descarga rápida sin búsqueda</div>
+              </div>
+              <div style="background:rgba(255,255,255,0.04);border-radius:6px;padding:10px;">
+                <div style="font-size:11px;font-weight:600;color:var(--damm-muted);margin-bottom:4px;">GRUPO por SKU familiar</div>
+                <div style="font-size:12px;">Barriles juntos · Cajas 1/3 juntas → ergonomía y estabilidad</div>
+              </div>
+              <div style="background:rgba(255,255,255,0.04);border-radius:6px;padding:10px;">
+                <div style="font-size:11px;font-weight:600;color:var(--damm-muted);margin-bottom:4px;">PRIORIDAD acceso</div>
+                <div style="font-size:12px;">Cliente 1 = frente · barriles siempre accesibles lateralmente</div>
+              </div>
+              <div style="background:rgba(245,158,11,0.08);border-radius:6px;padding:10px;border:1px solid rgba(245,158,11,0.2);">
+                <div style="font-size:11px;font-weight:600;color:var(--damm-amber);margin-bottom:4px;">♻️ RETORNO dinámico</div>
+                <div style="font-size:12px;">Zona retorno se actualiza con cada parada · reoptimización automática</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- RESULTADOS -->
+<section id="resultados">
+  <div class="container">
+    <div class="section-label">05 · Resultados</div>
+    <h2>LogisticOS vs<br>sistema actual Damm</h2>
+    <p class="lead">Benchmarking automático contra las rutas históricas del Excel. Los ahorros son reales y medibles desde el primer día.</p>
+
+    <!-- MÉTRICAS CLAVE (del modelo híbrido) -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-top:2.5rem;margin-bottom:2.5rem;">
+      <div style="background:var(--damm-surface);border:1px solid var(--damm-border);border-radius:12px;padding:1.5rem;text-align:center;">
+        <div style="font-size:2rem;margin-bottom:8px;">⏱</div>
+        <div style="font-size:2rem;font-weight:700;color:var(--damm-green);line-height:1;margin-bottom:6px;">−72 min</div>
+        <div style="font-size:13px;font-weight:600;color:var(--damm-text);margin-bottom:5px;">Ahorro en descarga</div>
+        <div style="font-size:11px;color:var(--damm-muted);line-height:1.5;">De 348 min → 276 min/día<br>en 3 rutas principales</div>
+      </div>
+      <div style="background:var(--damm-surface);border:1px solid var(--damm-border);border-radius:12px;padding:1.5rem;text-align:center;">
+        <div style="font-size:2rem;margin-bottom:8px;">🔄</div>
+        <div style="font-size:2rem;font-weight:700;color:var(--damm-green);line-height:1;margin-bottom:6px;">−41%</div>
+        <div style="font-size:13px;font-weight:600;color:var(--damm-text);margin-bottom:5px;">Movimientos evitados</div>
+        <div style="font-size:11px;color:var(--damm-muted);line-height:1.5;">312 → 183 movimientos<br>extra por jornada</div>
+      </div>
+      <div style="background:var(--damm-surface);border:1px solid var(--damm-border);border-radius:12px;padding:1.5rem;text-align:center;">
+        <div style="font-size:2rem;margin-bottom:8px;">⚡</div>
+        <div style="font-size:2rem;font-weight:700;color:var(--damm-green);line-height:1;margin-bottom:6px;">−61%</div>
+        <div style="font-size:13px;font-weight:600;color:var(--damm-text);margin-bottom:5px;">Reducción fricción</div>
+        <div style="font-size:11px;color:var(--damm-muted);line-height:1.5;">Friction Score global<br>74 → 29 puntos</div>
+      </div>
+      <div style="background:var(--damm-surface);border:1px solid var(--damm-border);border-radius:12px;padding:1.5rem;text-align:center;">
+        <div style="font-size:2rem;margin-bottom:8px;">📦</div>
+        <div style="font-size:2rem;font-weight:700;color:var(--damm-green);line-height:1;margin-bottom:6px;">−67%</div>
+        <div style="font-size:13px;font-weight:600;color:var(--damm-text);margin-bottom:5px;">Interferencia carga</div>
+        <div style="font-size:11px;color:var(--damm-muted);line-height:1.5;">Interference Score<br>79 → 26 puntos</div>
+      </div>
+    </div>
+
+    <!-- BALANCE NETO -->
+    <div style="background:var(--damm-surface);border:1px solid var(--damm-border);border-radius:12px;padding:1.5rem 2rem;margin-bottom:2.5rem;">
+      <div style="font-size:13px;font-weight:600;color:var(--damm-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:1rem;">Balance neto del cambio de modelo</div>
+      <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
+        <div style="flex:1;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:10px;padding:1rem;text-align:center;min-width:140px;">
+          <div style="font-size:10px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--damm-muted);margin-bottom:6px;">Coste adicional almacén</div>
+          <div style="font-size:1.6rem;font-weight:700;color:#EF4444;line-height:1;margin-bottom:4px;">+28 min</div>
+          <div style="font-size:11px;color:var(--damm-muted);">preparación carga (+8–12%)</div>
+        </div>
+        <div style="font-size:1.5rem;color:var(--damm-muted);flex-shrink:0;">=</div>
+        <div style="flex:1;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.2);border-radius:10px;padding:1rem;text-align:center;min-width:140px;">
+          <div style="font-size:10px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--damm-muted);margin-bottom:6px;">Ahorro en ruta</div>
+          <div style="font-size:1.6rem;font-weight:700;color:var(--damm-green);line-height:1;margin-bottom:4px;">−72 min</div>
+          <div style="font-size:11px;color:var(--damm-muted);">descarga en cliente</div>
+        </div>
+        <div style="font-size:1.5rem;color:var(--damm-muted);flex-shrink:0;">→</div>
+        <div style="flex:1;background:rgba(34,197,94,0.12);border:1.5px solid rgba(34,197,94,0.4);border-radius:10px;padding:1rem;text-align:center;min-width:140px;">
+          <div style="font-size:10px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--damm-green);margin-bottom:6px;">Beneficio neto</div>
+          <div style="font-size:1.6rem;font-weight:700;color:var(--damm-green);line-height:1;margin-bottom:4px;">+44 min</div>
+          <div style="font-size:11px;color:var(--damm-muted);">recuperados / jornada</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LEYENDA -->
+    <div style="display:flex;gap:1rem;margin-bottom:1.25rem;flex-wrap:wrap;align-items:center;">
+      <span style="font-size:11px;font-weight:600;color:var(--damm-muted);text-transform:uppercase;letter-spacing:0.06em;">Leyenda:</span>
+      <div style="display:flex;align-items:center;gap:6px;font-size:12px;"><div style="width:24px;height:8px;background:rgba(239,68,68,0.5);border-radius:2px;"></div>Sistema actual (SKU-based)</div>
+      <div style="display:flex;align-items:center;gap:6px;font-size:12px;"><div style="width:24px;height:8px;background:var(--damm-green);border-radius:2px;"></div>LogisticOS (modelo híbrido)</div>
+      <span style="font-size:11px;color:var(--damm-muted);margin-left:8px;">Las barras muestran el valor relativo al máximo del sistema actual (100%).</span>
+    </div>
+
+    <div class="compare-bars animate">
+      <div class="bar-row">
+        <div class="bar-label">Tiempo operativo total</div>
+        <div style="flex:1;display:flex;flex-direction:column;gap:4px;">
+          <div class="bar-track"><div class="bar-fill bar-old" style="width:100%"></div></div>
+          <div class="bar-track"><div class="bar-fill bar-new" style="width:77%"></div></div>
+        </div>
+        <div class="bar-val">8h → 6h 12m</div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label">Distancia recorrida</div>
+        <div style="flex:1;display:flex;flex-direction:column;gap:4px;">
+          <div class="bar-track"><div class="bar-fill bar-old" style="width:100%"></div></div>
+          <div class="bar-track"><div class="bar-fill bar-new" style="width:88%"></div></div>
+        </div>
+        <div class="bar-val">43.7 → 38.4 km</div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label">Movimientos internos</div>
+        <div style="flex:1;display:flex;flex-direction:column;gap:4px;">
+          <div class="bar-track"><div class="bar-fill bar-old" style="width:100%"></div></div>
+          <div class="bar-track"><div class="bar-fill bar-new" style="width:34%"></div></div>
+        </div>
+        <div class="bar-val">312 → 183 mov.</div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label">T. medio descarga/cliente</div>
+        <div style="flex:1;display:flex;flex-direction:column;gap:4px;">
+          <div class="bar-track"><div class="bar-fill bar-old" style="width:100%"></div></div>
+          <div class="bar-track"><div class="bar-fill bar-new" style="width:72%"></div></div>
+        </div>
+        <div class="bar-val">18m → 13m</div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label">Friction Score</div>
+        <div style="flex:1;display:flex;flex-direction:column;gap:4px;">
+          <div class="bar-track"><div class="bar-fill bar-old" style="width:100%"></div></div>
+          <div class="bar-track"><div class="bar-fill bar-new" style="width:39%"></div></div>
+        </div>
+        <div class="bar-val">74 → 29 pts</div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label">Interference Score</div>
+        <div style="flex:1;display:flex;flex-direction:column;gap:4px;">
+          <div class="bar-track"><div class="bar-fill bar-old" style="width:100%"></div></div>
+          <div class="bar-track"><div class="bar-fill bar-new" style="width:33%"></div></div>
+        </div>
+        <div class="bar-val">79 → 26 pts</div>
+      </div>
+    </div>
+
+    <!-- ESCALABILIDAD -->
+    <div style="margin-top:4rem">
+      <div class="section-label">06 · Escalabilidad</div>
+      <h2>Del hackathon<br>a producción</h2>
+      <div class="roadmap">
+        <div class="rm-item done">
+          <div class="rm-dot">✓</div>
+          <div class="rm-content">
+            <div class="rm-title">Modelo conceptual de carga híbrida <span class="rm-tag tag-done">Hecho</span></div>
+            <div class="rm-desc">Demostración HTML de organización SKU × cliente. Benchmarking modo puramente SKU vs híbrido.</div>
+          </div>
+        </div>
+        <div class="rm-item done">
+          <div class="rm-dot">✓</div>
+          <div class="rm-content">
+            <div class="rm-title">Motor logístico conjunto VRP + Bin Packing <span class="rm-tag tag-done">Hecho</span></div>
+            <div class="rm-desc">Algoritmo de optimización simultánea ruta+carga con datos reales Mollet del Vallès.</div>
+          </div>
+        </div>
+        <div class="rm-item next">
+          <div class="rm-dot">▶</div>
+          <div class="rm-content">
+            <div class="rm-title">API de producción con Google Maps <span class="rm-tag tag-next">Siguiente</span></div>
+            <div class="rm-desc">Integración con Directions API para distancias reales con tráfico. Cálculo de ventanas horarias dinámico.</div>
+          </div>
+        </div>
+        <div class="rm-item">
+          <div class="rm-dot">◯</div>
+          <div class="rm-content">
+            <div class="rm-title">App móvil para repartidores <span class="rm-tag tag-future">Futuro</span></div>
+            <div class="rm-desc">Interfaz estilo Amazon/Uber. Recepción de ruta, vista de carga, marcado de incidencias, reoptimización en tiempo real.</div>
+          </div>
+        </div>
+        <div class="rm-item">
+          <div class="rm-dot">◯</div>
+          <div class="rm-content">
+            <div class="rm-title">ML predictivo de demanda <span class="rm-tag tag-future">Futuro</span></div>
+            <div class="rm-desc">Modelos de predicción de pedidos por cliente y zona para pre-optimizar rutas antes de recibir pedidos.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div style="margin-bottom:8px;font-size:14px;font-weight:600;color:var(--damm-text)">DAMM/DDI · LogisticOS · Hackathon 2026</div>
+  Optimización logística conjunta ruta + carga · Mollet del Vallès · Datos reales 30/01/2026
+</footer>
+
+<script>
+// ==================== DATOS REALES DEL EXCEL ====================
+// Cada cliente tiene un truckId que indica a qué camión/ruta pertenece
+const clients = [
+  // DR0001 — Camión Grande — color #22C55E — ILLA/E.FRANÇ
+  { id:1, name:"Bar Granada",       addr:"Ronda Orient 8",           zone:"ILLA/E.FRANÇ",  truck:"DR0001", vol:10, hasRet:true,  lat:41.5446, lng:2.2115, color:"#22C55E", order:1,  products:["ED13 6+3 CAJ","Letona 1L 1 CAJ"] },
+  { id:2, name:"Bar Champanillo",   addr:"Plaza Major 24",           zone:"ILLA/E.FRANÇ",  truck:"DR0001", vol:18, hasRet:true,  lat:41.5440, lng:2.2125, color:"#22C55E", order:2,  products:["ED30 3 BRL","DL30 1 BRL","TU30 1 BRL"] },
+  { id:3, name:"Palentino Bar",     addr:"Av. Llibertat 39",         zone:"ILLA/E.FRANÇ",  truck:"DR0001", vol:12, hasRet:true,  lat:41.5438, lng:2.2108, color:"#22C55E", order:3,  products:["ED15LN 3+2 CAJ","ED30 1 BRL","Letona 1.5L 3 CAJ"] },
+  { id:4, name:"Manel Bar",         addr:"Av. Llibertat 14",         zone:"ILLA/E.FRANÇ",  truck:"DR0001", vol:15, hasRet:true,  lat:41.5435, lng:2.2112, color:"#22C55E", order:4,  products:["ED13 6+3 CAJ","ED30 1 BRL","Copa Grande x24"] },
+  { id:5, name:"Plaza Döner Kebab", addr:"Italia 46",                zone:"ILLA/E.FRANÇ",  truck:"DR0001", vol:6,  hasRet:false, lat:41.5432, lng:2.2118, color:"#22C55E", order:5,  products:["ED13 5 CAJ","Biscuits Galicia 1 CAJ"] },
+  { id:6, name:"Venecia Bar",       addr:"Ronda Orient 14",          zone:"ILLA/E.FRANÇ",  truck:"DR0001", vol:3,  hasRet:false, lat:41.5444, lng:2.2120, color:"#22C55E", order:6,  products:["Letona 1.5L 2 CAJ","Marinas 1 CAJ"] },
+  // DR0006 — Camión Mediano — color #3B82F6 — BARRI OLIVA · PRATRIBA
+  { id:7, name:"Tentación II",      addr:"Rambla Pompeu Fabra 40",   zone:"BARRI OLIVA",   truck:"DR0006", vol:8,  hasRet:true,  lat:41.5410, lng:2.2098, color:"#3B82F6", order:7,  products:["FD13 2 CAJ","VO13 2 CAJ"] },
+  { id:8, name:"El Garbi Bar",      addr:"Rambla Pompeu Fabra 20",   zone:"PRATRIBA",      truck:"DR0006", vol:22, hasRet:true,  lat:41.5415, lng:2.2095, color:"#3B82F6", order:8,  products:["ED13 5 CAJ","ED15LN 3 CAJ","ED30 1 BRL","Veri+Letona+Coca-Cola"] },
+  // DR0017 — Camión Grande — color #F59E0B — PANTIQ · RAMBLA NOVA
+  { id:9, name:"Raco del Cachopo",  addr:"Carrer Joaquim Mir 88",    zone:"PANTIQ/MAGAROL",truck:"DR0017", vol:5,  hasRet:true,  lat:41.5480, lng:2.2155, color:"#F59E0B", order:9,  products:["ED13 3 CAJ","Daura 1 CAJ","Turia 2 CAJ"] },
+  { id:10,name:"Alaia Coffee Bar",  addr:"Av. Jaume I 156",          zone:"PANTIQ/MAGAROL",truck:"DR0017", vol:4,  hasRet:false, lat:41.5488, lng:2.2160, color:"#F59E0B", order:10, products:["Letona 1.5L 3 CAJ","Letona desnat 1 CAJ"] },
+  { id:11,name:"La Taverna Pantiq.",addr:"Carrer Can Pantiquet S/N", zone:"PANTIQ/MAGAROL",truck:"DR0017", vol:8,  hasRet:true,  lat:41.5492, lng:2.2162, color:"#F59E0B", order:11, products:["ED13 3 CAJ","ED15LN 2 CAJ"] },
+  { id:12,name:"Bracafe",           addr:"Carrer Gaieta Vínzia 11",  zone:"RAMBLA NOVA",   truck:"DR0017", vol:14, hasRet:true,  lat:41.5428, lng:2.2088, color:"#F59E0B", order:12, products:["ED13+BO13+DL13","Veri 1/2 1 CAJ","Copa Grande x6"] },
+  { id:13,name:"Kaphiy Brunch",     addr:"Carrer Gaietà Vínzia 20",  zone:"RAMBLA NOVA",   truck:"DR0017", vol:9,  hasRet:true,  lat:41.5430, lng:2.2090, color:"#F59E0B", order:13, products:["ED13+ED15LN","Coca-Cola x3","Schweppes x1"] },
+  { id:14,name:"Bar Almansa",       addr:"Carrer Sant Llorenç 52",   zone:"RAMBLA NOVA",   truck:"DR0017", vol:7,  hasRet:false, lat:41.5422, lng:2.2085, color:"#F59E0B", order:14, products:["FDL13 1 CAJ","Cacaolat 1 CAJ","Granini x4"] },
+  // DR0022 — Furgoneta — color #E8251A — PARETS · CAN BORRELL
+  { id:15,name:"Forn L'Antic",      addr:"Av. Rafael Casanova 12",   zone:"BARRI OLIVA",   truck:"DR0022", vol:5,  hasRet:false, lat:41.5412, lng:2.2102, color:"#E8251A", order:15, products:["Yosoy Avena 2 CAJ","La Levantina 1 CAJ","Letona 1.5L 2 CAJ"] },
+  { id:16,name:"Estudiantil Bar",   addr:"Av. Burgos 76",            zone:"BARRI OLIVA",   truck:"DR0022", vol:11, hasRet:true,  lat:41.5408, lng:2.2100, color:"#E8251A", order:16, products:["ED13 6 CAJ","ED15LN 4 CAJ","VO13 1 CAJ"] },
+  { id:17,name:"Extremeños Bar",    addr:"Carrer de Borrell 16",     zone:"CAN BORRELL",   truck:"DR0022", vol:16, hasRet:true,  lat:41.5462, lng:2.2140, color:"#E8251A", order:17, products:["ED30 1 BRL","ED13 4 CAJ","ED15LN 7 CAJ","VO15LN 1 CAJ"] },
+  { id:18,name:"Rste. L'Olive",     addr:"Carrer Claudi Arañó 17",   zone:"PARETS",        truck:"DR0022", vol:20, hasRet:true,  lat:41.5390, lng:2.2200, color:"#E8251A", order:18, products:["ED30 1 BRL","TU20 2 BRL","Veri 1.5L 15 CAJ","Letona x6"] },
+];
+
+const DEPOT = { lat:41.5510, lng:2.2070, name:"Almacén DDI" };
+
+// Rutas agrupadas por camión
+const trucks = {
+  "DR0001": { name:"DR0001 — Camión Grande", color:"#22C55E", icon:"🚛" },
+  "DR0006": { name:"DR0006 — Camión Mediano", color:"#3B82F6", icon:"🚚" },
+  "DR0017": { name:"DR0017 — Camión Grande", color:"#F59E0B", icon:"🚛" },
+  "DR0022": { name:"DR0022 — Furgoneta", color:"#E8251A", icon:"🚐" },
+};
+
+// ==================== COORDINATE MAPPING ====================
+function latLngToXY(lat, lng, w, h) {
+  w = w || 660; h = h || 420;
+  const minLat=41.537, maxLat=41.552, minLng=2.207, maxLng=2.223;
+  const x = 40 + (lng - minLng)/(maxLng - minLng) * (w - 60);
+  const y = (h - 20) - (lat - minLat)/(maxLat - minLat) * (h - 60);
+  return {x, y};
+}
+
+// ==================== RENDER OPTIMIZED MAP ====================
+function renderMap() {
+  const svg = document.getElementById('route-map');
+  svg.innerHTML = '';
+  const W=660, H=420;
+
+  // Draw truck routes
+  const depotXY = latLngToXY(DEPOT.lat, DEPOT.lng, W, H);
+
+  // Group clients by truck and draw route per truck
+  for(const [truckId, truck] of Object.entries(trucks)) {
+    const truckClients = [...clients].filter(c=>c.truck===truckId).sort((a,b)=>a.order-b.order);
+    if(!truckClients.length) continue;
+
+    let prev = depotXY;
+    for(const c of truckClients) {
+      const xy = latLngToXY(c.lat, c.lng, W, H);
+      const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+      line.setAttribute('x1', prev.x); line.setAttribute('y1', prev.y);
+      line.setAttribute('x2', xy.x); line.setAttribute('y2', xy.y);
+      line.setAttribute('stroke', truck.color); line.setAttribute('stroke-width','2');
+      line.setAttribute('stroke-dasharray','7 3'); line.setAttribute('opacity','0.75');
+      line.classList.add('route-line');
+      svg.appendChild(line);
+      prev = xy;
+    }
+    // Return to depot
+    const lastXY = latLngToXY(truckClients[truckClients.length-1].lat, truckClients[truckClients.length-1].lng, W, H);
+    const retLine = document.createElementNS('http://www.w3.org/2000/svg','line');
+    retLine.setAttribute('x1',lastXY.x); retLine.setAttribute('y1',lastXY.y);
+    retLine.setAttribute('x2',depotXY.x); retLine.setAttribute('y2',depotXY.y);
+    retLine.setAttribute('stroke',truck.color); retLine.setAttribute('stroke-width','1');
+    retLine.setAttribute('stroke-dasharray','3 5'); retLine.setAttribute('opacity','0.3');
+    svg.appendChild(retLine);
+  }
+
+  // Depot
+  const dg = document.createElementNS('http://www.w3.org/2000/svg','g');
+  const dr = document.createElementNS('http://www.w3.org/2000/svg','rect');
+  dr.setAttribute('x', depotXY.x-12); dr.setAttribute('y', depotXY.y-12);
+  dr.setAttribute('width',24); dr.setAttribute('height',24); dr.setAttribute('rx',4);
+  dr.setAttribute('fill','rgba(245,158,11,0.2)'); dr.setAttribute('stroke','#F59E0B'); dr.setAttribute('stroke-width','2');
+  dg.appendChild(dr);
+  const dt = document.createElementNS('http://www.w3.org/2000/svg','text');
+  dt.setAttribute('x',depotXY.x); dt.setAttribute('y',depotXY.y+4);
+  dt.setAttribute('text-anchor','middle'); dt.setAttribute('fill','#F59E0B'); dt.setAttribute('font-size','10'); dt.setAttribute('font-weight','700'); dt.setAttribute('font-family','Space Grotesk');
+  dt.textContent='D'; dg.appendChild(dt);
+  const dl = document.createElementNS('http://www.w3.org/2000/svg','text');
+  dl.setAttribute('x',depotXY.x); dl.setAttribute('y',depotXY.y-16);
+  dl.setAttribute('text-anchor','middle'); dl.setAttribute('fill','rgba(245,158,11,0.7)'); dl.setAttribute('font-size','9'); dl.setAttribute('font-family','Space Grotesk');
+  dl.textContent='Almacén'; dg.appendChild(dl);
+  svg.appendChild(dg);
+
+  // Client nodes
+  for(const c of clients) {
+    const xy = latLngToXY(c.lat, c.lng, W, H);
+    const g = document.createElementNS('http://www.w3.org/2000/svg','g');
+    g.setAttribute('class','map-node'); g.setAttribute('data-id', c.id);
+    g.style.cursor = 'pointer';
+
+    const circle = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    circle.setAttribute('cx', xy.x); circle.setAttribute('cy', xy.y); circle.setAttribute('r','10');
+    circle.setAttribute('fill', hexToRgba(c.color, 0.25)); circle.setAttribute('stroke', c.color); circle.setAttribute('stroke-width','2');
+    g.appendChild(circle);
+
+    const num = document.createElementNS('http://www.w3.org/2000/svg','text');
+    num.setAttribute('x',xy.x); num.setAttribute('y',xy.y+4);
+    num.setAttribute('text-anchor','middle'); num.setAttribute('fill',c.color);
+    num.setAttribute('font-size','9'); num.setAttribute('font-weight','700'); num.setAttribute('font-family','Space Grotesk');
+    num.textContent = c.order;
+    g.appendChild(num);
+
+    if(c.hasRet) {
+      const dot = document.createElementNS('http://www.w3.org/2000/svg','circle');
+      dot.setAttribute('cx',xy.x+8); dot.setAttribute('cy',xy.y-8); dot.setAttribute('r','3');
+      dot.setAttribute('fill','#F59E0B');
+      g.appendChild(dot);
+    }
+
+    g.addEventListener('click', ()=>selectClient(c.id));
+    g.addEventListener('mouseenter', (e)=>showTooltip(c, e));
+    g.addEventListener('mouseleave', ()=>hideTooltip());
+    svg.appendChild(g);
+  }
+}
+
+// ==================== RENDER OLD (NON-OPTIMIZED) MAP ====================
+function renderOldMap() {
+  const svg = document.getElementById('old-route-map');
+  svg.innerHTML = '';
+  const W=660, H=420;
+  const depotXY = latLngToXY(DEPOT.lat, DEPOT.lng, W, H);
+
+  // Old system: single red route, random-ish order (not optimized), all one color
+  const oldOrder = [1,9,7,15,12,3,18,5,13,8,16,2,10,6,14,11,17,4]; // messy non-optimized order
+  const oldClients = oldOrder.map(id => clients.find(c=>c.id===id));
+
+  let prev = depotXY;
+  for(const c of oldClients) {
+    const xy = latLngToXY(c.lat, c.lng, W, H);
+    const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+    line.setAttribute('x1', prev.x); line.setAttribute('y1', prev.y);
+    line.setAttribute('x2', xy.x); line.setAttribute('y2', xy.y);
+    line.setAttribute('stroke','rgba(239,68,68,0.6)'); line.setAttribute('stroke-width','1.5');
+    line.setAttribute('stroke-dasharray','6 4');
+    line.classList.add('route-line');
+    svg.appendChild(line);
+    prev = xy;
+  }
+  const lastXY = latLngToXY(oldClients[oldClients.length-1].lat, oldClients[oldClients.length-1].lng, W, H);
+  const retLine = document.createElementNS('http://www.w3.org/2000/svg','line');
+  retLine.setAttribute('x1',lastXY.x); retLine.setAttribute('y1',lastXY.y);
+  retLine.setAttribute('x2',depotXY.x); retLine.setAttribute('y2',depotXY.y);
+  retLine.setAttribute('stroke','rgba(239,68,68,0.3)'); retLine.setAttribute('stroke-width','1');
+  retLine.setAttribute('stroke-dasharray','3 5');
+  svg.appendChild(retLine);
+
+  // Depot
+  const dg = document.createElementNS('http://www.w3.org/2000/svg','g');
+  const dr = document.createElementNS('http://www.w3.org/2000/svg','rect');
+  dr.setAttribute('x',depotXY.x-12); dr.setAttribute('y',depotXY.y-12);
+  dr.setAttribute('width',24); dr.setAttribute('height',24); dr.setAttribute('rx',4);
+  dr.setAttribute('fill','rgba(239,68,68,0.2)'); dr.setAttribute('stroke','#EF4444'); dr.setAttribute('stroke-width','1.5');
+  dg.appendChild(dr);
+  const dt = document.createElementNS('http://www.w3.org/2000/svg','text');
+  dt.setAttribute('x',depotXY.x); dt.setAttribute('y',depotXY.y+4);
+  dt.setAttribute('text-anchor','middle'); dt.setAttribute('fill','#EF4444'); dt.setAttribute('font-size','10'); dt.setAttribute('font-weight','700'); dt.setAttribute('font-family','Space Grotesk');
+  dt.textContent='D'; dg.appendChild(dt);
+  svg.appendChild(dg);
+
+  // All clients same grey color (no truck differentiation)
+  for(const c of clients) {
+    const xy = latLngToXY(c.lat, c.lng, W, H);
+    const g = document.createElementNS('http://www.w3.org/2000/svg','g');
+    const circle = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    circle.setAttribute('cx',xy.x); circle.setAttribute('cy',xy.y); circle.setAttribute('r','9');
+    circle.setAttribute('fill','rgba(239,68,68,0.1)'); circle.setAttribute('stroke','rgba(239,68,68,0.5)'); circle.setAttribute('stroke-width','1.5');
+    g.appendChild(circle);
+    const num = document.createElementNS('http://www.w3.org/2000/svg','text');
+    const oldIdx = oldOrder.indexOf(c.id) + 1;
+    num.setAttribute('x',xy.x); num.setAttribute('y',xy.y+4);
+    num.setAttribute('text-anchor','middle'); num.setAttribute('fill','rgba(239,68,68,0.8)');
+    num.setAttribute('font-size','8'); num.setAttribute('font-weight','700'); num.setAttribute('font-family','Space Grotesk');
+    num.textContent=oldIdx;
+    g.appendChild(num);
+    svg.appendChild(g);
+  }
+}
+
+function hexToRgba(hex, alpha) {
+  const r=parseInt(hex.slice(1,3),16), g=parseInt(hex.slice(3,5),16), b=parseInt(hex.slice(5,7),16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
+// ==================== CLIENT LIST ====================
+function renderClientList() {
+  const list = document.getElementById('client-list');
+  const sorted = [...clients].sort((a,b)=>a.order-b.order);
+  list.innerHTML = `<div style="padding:10px 16px; font-size:11px; color:var(--damm-muted); letter-spacing:0.08em; text-transform:uppercase; border-bottom:1px solid var(--damm-border);">${clients.length} clientes · 4 rutas optimizadas</div>`;
+
+  let lastTruck = null;
+  for(const c of sorted) {
+    if(c.truck !== lastTruck) {
+      const truckInfo = trucks[c.truck];
+      const hdr = document.createElement('div');
+      hdr.style.cssText = `padding:6px 16px;font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:${truckInfo.color};background:${hexToRgba(truckInfo.color,0.08)};border-bottom:1px solid var(--damm-border);border-top:1px solid var(--damm-border);`;
+      hdr.textContent = `${truckInfo.icon} ${c.truck} — ${truckInfo.name.split('—')[1].trim()}`;
+      list.appendChild(hdr);
+      lastTruck = c.truck;
+    }
+    const el = document.createElement('div');
+    el.className = 'client-item';
+    el.id = `ci-${c.id}`;
+    el.innerHTML = `
+      <div class="client-num" style="background:${c.color}">${c.order}</div>
+      <div class="client-info">
+        <div class="client-name">${c.name}</div>
+        <div class="client-meta">${c.addr} · ${c.zone}</div>
+      </div>
+      <div class="client-ret ${c.hasRet?'has-ret':'no-ret'}" title="${c.hasRet?'Tiene retornables':'Sin retornables'}"></div>
+      <div class="client-vol">${c.vol}u</div>
+    `;
+    el.addEventListener('click',()=>selectClient(c.id));
+    list.appendChild(el);
+  }
+}
+
+// Old client list
+function renderOldClientList() {
+  const list = document.getElementById('old-client-list');
+  const oldOrder = [1,9,7,15,12,3,18,5,13,8,16,2,10,6,14,11,17,4];
+  list.innerHTML = `<div style="padding:10px 16px; font-size:11px; color:var(--damm-muted); letter-spacing:0.08em; text-transform:uppercase; border-bottom:1px solid var(--damm-border);">${clients.length} clientes · 1 ruta manual</div>`;
+  for(let i=0;i<oldOrder.length;i++) {
+    const c = clients.find(x=>x.id===oldOrder[i]);
+    if(!c) continue;
+    const el = document.createElement('div');
+    el.className = 'client-item';
+    el.innerHTML = `
+      <div class="client-num" style="background:rgba(239,68,68,0.7)">${i+1}</div>
+      <div class="client-info">
+        <div class="client-name">${c.name}</div>
+        <div class="client-meta">${c.addr}</div>
+      </div>
+      <div class="client-vol">${c.vol}u</div>
+    `;
+    list.appendChild(el);
+  }
+}
+
+let selectedClient = null;
+function selectClient(id) {
+  document.querySelectorAll('.client-item').forEach(el=>el.classList.remove('active'));
+  const ci = document.getElementById(`ci-${id}`);
+  if(ci) { ci.classList.add('active'); ci.scrollIntoView({block:'nearest'}); }
+  selectedClient = id;
+  
+  const c = clients.find(x=>x.id===id);
+  if(!c) return;
+  const tooltip = document.getElementById('client-tooltip');
+  const xy = latLngToXY(c.lat, c.lng);
+  const mapEl = document.getElementById('map-container');
+  const svgEl = document.getElementById('route-map');
+  const svgRect = svgEl.getBoundingClientRect();
+  const scaleX = svgRect.width / 660;
+  const scaleY = svgRect.height / 420;
+  
+  tooltip.style.display = 'block';
+  tooltip.style.left = Math.min(xy.x * scaleX + 20, svgRect.width - 220) + 'px';
+  tooltip.style.top = Math.max(xy.y * scaleY - 80, 10) + 'px';
+  tooltip.innerHTML = `
+    <div style="font-weight:600;margin-bottom:4px;color:${c.color}">#${c.order} ${c.name}</div>
+    <div style="font-size:10px;color:${c.color};margin-bottom:4px;font-weight:600;">${trucks[c.truck]?trucks[c.truck].icon+' '+c.truck:''}</div>
+    <div style="color:var(--damm-muted);font-size:11px;margin-bottom:8px;">${c.addr}</div>
+    <div style="font-size:11px;margin-bottom:2px;"><span style="color:var(--damm-muted)">Volumen:</span> ${c.vol} unidades</div>
+    <div style="font-size:11px;margin-bottom:2px;"><span style="color:var(--damm-muted)">Retornables:</span> ${c.hasRet?'<span style="color:#F59E0B">Sí ♻️</span>':'No'}</div>
+    <div style="margin-top:8px;font-size:11px;color:var(--damm-muted)">Productos:</div>
+    ${c.products.map(p=>`<div style="font-size:11px;padding:2px 0;border-left:2px solid ${c.color};padding-left:6px;margin:2px 0;">${p}</div>`).join('')}
+  `;
+}
+
+function showTooltip(c, e) {}
+function hideTooltip() {}
+
+// ==================== LOAD TIMELINE ====================
+function renderLoadTimeline() {
+  const container = document.getElementById('load-timeline');
+  const zones = ['RETORNO','FRONTAL (1-6)','MEDIA (7-12)','FONDO (13-18)'];
+  const colors = ['#F59E0B','#22C55E','#3B82F6','#E8251A'];
+  const fills = [30, 45, 35, 42]; // %
+  container.innerHTML = zones.map((z,i)=>`
+    <div style="margin-bottom:10px;">
+      <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px;">
+        <span style="color:${colors[i]};font-weight:600">${z}</span>
+        <span style="color:var(--damm-muted)">${fills[i]}% ocupado</span>
+      </div>
+      <div style="height:16px;background:rgba(255,255,255,0.05);border-radius:4px;overflow:hidden;">
+        <div style="width:${fills[i]}%;height:100%;background:${colors[i]};opacity:0.7;border-radius:4px;transition:width 1s;"></div>
+      </div>
+    </div>
+  `).join('') + `
+    <div style="margin-top:12px;padding:10px;background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.2);border-radius:6px;font-size:12px;">
+      <span style="color:var(--damm-green);font-weight:600">↑ 87% eficiencia de carga</span>
+      <span style="color:var(--damm-muted)"> — vs 64% con carga por SKU puro (↑23% mejora)</span>
+    </div>
+  `;
+}
+
+// ==================== OPTIMIZATION ANIMATION ====================
+function runOptimize() {
+  const btn = document.querySelector('.sim-btn:last-child');
+  btn.textContent = '⚡ Optimizando...';
+  btn.style.opacity = '0.6';
+  
+  setTimeout(()=>{
+    // Re-shuffle within each truck group (not across trucks)
+    for(const truckId of Object.keys(trucks)) {
+      const truckClients = clients.filter(c=>c.truck===truckId);
+      const orders = truckClients.map(c=>c.order);
+      orders.sort(()=>Math.random()-0.5);
+      truckClients.forEach((c,i)=>c.order=orders[i]);
+    }
+    renderMap();
+    renderClientList();
+    btn.textContent = '⚡ Optimizar';
+    btn.style.opacity = '1';
+    
+    document.getElementById('kpi-time').textContent = `${Math.floor(5+Math.random()*2)}h ${Math.floor(20+Math.random()*40)}m`;
+    document.getElementById('kpi-km').textContent = `${(35+Math.random()*8).toFixed(1)} km`;
+  }, 1200);
+}
+
+function setView(v, ev) {
+  document.querySelectorAll('.sim-btn').forEach(b=>b.classList.remove('active'));
+  if(ev && ev.target) ev.target.classList.add('active');
+}
+
+// ==================== INTERSECTION OBSERVER ====================
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.1 });
+document.querySelectorAll('.animate').forEach(el=>observer.observe(el));
+
+// ==================== INIT ====================
+renderMap();
+renderOldMap();
+renderClientList();
+renderOldClientList();
+renderLoadTimeline();
+
+// Close tooltip on map click
+document.getElementById('map-container').addEventListener('click', function(e) {
+  if(!e.target.closest('.map-node')) {
+    document.getElementById('client-tooltip').style.display='none';
+    document.querySelectorAll('.client-item').forEach(el=>el.classList.remove('active'));
+  }
+});
+</script>
+</body>
+</html>
