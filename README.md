@@ -15,3 +15,5 @@ Contiene los datos ya depurados. Muestra el proceso de limpieza de datos aplicad
 PAGINA PARA CALCULAR LA CARGA.html
 
 Es una herramienta que permite subir un archivo Excel con las comandas y calcular cómo organizar la carga del camión de forma eficiente.
+
+Tambien hay un archivo que muestra la interfaz de la APP movil que podría tener el repartidor y el almacen
